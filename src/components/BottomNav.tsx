@@ -45,7 +45,7 @@ export function BottomNav({ state, navigation }: BottomTabBarProps) {
         if (isCenter) {
           return (
             <Pressable key={route.key} onPress={onPress} style={styles.centerBtn}>
-              <Icon name="add" size={32} color="#fff" />
+              <Icon name="add" size={28} color="#fff" />
             </Pressable>
           );
         }
@@ -94,17 +94,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(16,16,18,0.13)',
   },
   centerBtn: {
-    width: 66,
-    height: 66,
-    marginTop: -26,
-    borderRadius: 33,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#101012',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 18 },
-    shadowOpacity: 0.8,
-    shadowRadius: 36,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 8,
   },
 });
