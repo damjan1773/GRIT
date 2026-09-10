@@ -19,13 +19,18 @@ export function BottomNav({ state, navigation }: BottomTabBarProps) {
   const activeRouteName = state.routes[state.index].name;
   if (activeRouteName === 'Onboarding') return null;
 
+  // The bar's rounded bottom corners already clear the home indicator, so only
+  // a sliver of the safe-area inset is needed — the full inset leaves a dead
+  // band of gradient under the icons.
+  const bottomInset = Math.min(insets.bottom, 8);
+
   return (
     <LinearGradient
       colors={gradientColors}
       locations={gradientLocations}
       start={{ x: 0, y: 0.2 }}
       end={{ x: 1, y: 0.8 }}
-      style={[styles.bar, { height: 98 + insets.bottom, paddingBottom: 24 + insets.bottom }]}
+      style={[styles.bar, { height: 72 + bottomInset, paddingBottom: bottomInset }]}
     >
       {state.routes.map((route, index) => {
         const focused = index === state.index;
@@ -66,7 +71,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
-    paddingTop: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -14 },
     shadowOpacity: 0.45,
