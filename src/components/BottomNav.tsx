@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { gradientColors, gradientLocations } from '../theme/colors';
 import { Icon } from './Icon';
 
@@ -14,6 +15,7 @@ const TAB_ICON: Record<string, string> = {
 };
 
 export function BottomNav({ state, navigation }: BottomTabBarProps) {
+  const insets = useSafeAreaInsets();
   const activeRouteName = state.routes[state.index].name;
   if (activeRouteName === 'Onboarding') return null;
 
@@ -23,7 +25,7 @@ export function BottomNav({ state, navigation }: BottomTabBarProps) {
       locations={gradientLocations}
       start={{ x: 0, y: 0.2 }}
       end={{ x: 1, y: 0.8 }}
-      style={styles.bar}
+      style={[styles.bar, { height: 98 + insets.bottom, paddingBottom: 24 + insets.bottom }]}
     >
       {state.routes.map((route, index) => {
         const focused = index === state.index;
@@ -56,11 +58,6 @@ export function BottomNav({ state, navigation }: BottomTabBarProps) {
 
 const styles = StyleSheet.create({
   bar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 98,
     borderTopLeftRadius: 34,
     borderTopRightRadius: 34,
     borderBottomLeftRadius: 48,
@@ -70,7 +67,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 24,
     paddingTop: 8,
-    paddingBottom: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -14 },
     shadowOpacity: 0.45,

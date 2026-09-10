@@ -112,7 +112,7 @@ export function DashboardScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingTop: 62, paddingHorizontal: 22, paddingBottom: 130 },
+  content: { paddingTop: 62, paddingHorizontal: 22, paddingBottom: 32 },
   emptyScreen: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', padding: 30 },
   emptyText: { fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)', textAlign: 'center' },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },

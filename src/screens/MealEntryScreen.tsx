@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, gradientColors, gradientLocations } from '../theme/colors';
 import { Icon } from '../components/Icon';
@@ -49,7 +48,7 @@ export function MealEntryScreen() {
   const scrollRef = useRef<ScrollView>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: nextId(), kind: 'bot', text: 'Zdravo. Napiši svojim rečima šta si jeo — izračunaću kalorije i makronutrijente, a ti potvrdi.' },
+    { id: nextId(), kind: 'bot', text: 'Zdravo. Napiši svojim rečima šta si jeo i izračunaću kalorije i makronutrijente. Što detaljnije napišeš šta si pojeo/la to ću preciznije izračunati.' },
   ]);
   const [input, setInput] = useState('');
 
@@ -122,12 +121,11 @@ export function MealEntryScreen() {
     );
   }
 
-  const tabBarHeight = useBottomTabBarHeight();
-
   return (
     <KeyboardAvoidingView
-      style={[styles.screen, { paddingBottom: tabBarHeight + 34 }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.screen}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
     >
       <View style={styles.header}>
         <Pressable onPress={() => navigation.navigate('Dashboard')} style={styles.backBtn}>
