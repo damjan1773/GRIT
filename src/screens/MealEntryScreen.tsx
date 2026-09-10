@@ -7,7 +7,7 @@ import { Icon } from '../components/Icon';
 import { parseMealFromText } from '../services/mealParser';
 import { MealParseItem } from '../services/mealParser.types';
 import { useAppData } from '../context/AppDataContext';
-import { todayKey } from '../services/storage';
+import { createMealId, todayKey } from '../services/storage';
 
 type ChatMessage =
   | { id: string; kind: 'bot'; text: string }
@@ -96,7 +96,7 @@ export function MealEntryScreen() {
     if (!message || message.kind !== 'card') return;
     const totals = cardTotals(message.items);
     const meal = {
-      id: nextId(),
+      id: createMealId(),
       name: message.items.map(it => it.name).join(' + '),
       calories: totals.calories,
       protein: totals.protein,

@@ -5,6 +5,7 @@ import { colors, gradientColors, gradientLocations, softGradientColors } from '.
 import { Icon } from '../components/Icon';
 import { ProgressRing } from '../components/ProgressRing';
 import { MacroCard } from '../components/MacroCard';
+import { SwipeableRow } from '../components/SwipeableRow';
 import { useAppData } from '../context/AppDataContext';
 
 function initialsOf(name: string): string {
@@ -16,7 +17,7 @@ function initialsOf(name: string): string {
 }
 
 export function DashboardScreen() {
-  const { profile, todaysMeals } = useAppData();
+  const { profile, todaysMeals, deleteMeal } = useAppData();
 
   if (!profile) {
     return (
@@ -54,9 +55,6 @@ export function DashboardScreen() {
       <View style={styles.ringCard}>
         <View style={styles.ringHeader}>
           <Text style={styles.ringTitle}>Dnevni unos</Text>
-          <View style={styles.ringBadge}>
-            <Text style={styles.ringBadgeText}>Održavanje · TDEE {profile.tdee.toLocaleString('sr-RS')}</Text>
-          </View>
         </View>
         <View style={styles.ringWrap}>
           <ProgressRing progress={pct}>
@@ -84,24 +82,26 @@ export function DashboardScreen() {
       <View style={{ gap: 9 }}>
         {todaysMeals.length === 0 && <Text style={styles.emptyMeals}>Još nema unetih obroka danas.</Text>}
         {todaysMeals.map(meal => (
-          <View key={meal.id} style={styles.mealRow}>
-            <View style={styles.mealIconWrap}>
-              <Icon name="restaurant" size={19} color={colors.mint} />
+          <SwipeableRow key={meal.id} onDelete={() => deleteMeal(meal.id)}>
+            <View style={styles.mealRow}>
+              <View style={styles.mealIconWrap}>
+                <Icon name="restaurant" size={19} color={colors.mint} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={styles.mealName} numberOfLines={1}>
+                  {meal.name}
+                </Text>
+                <Text style={styles.mealMeta}>
+                  {new Date(meal.timestamp).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' })} · {meal.protein}g P ·{' '}
+                  {meal.carbs}g U · {meal.fats}g M
+                </Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={styles.mealKcal}>{Math.round(meal.calories)}</Text>
+                <Text style={styles.mealKcalLabel}>KCAL</Text>
+              </View>
             </View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={styles.mealName} numberOfLines={1}>
-                {meal.name}
-              </Text>
-              <Text style={styles.mealMeta}>
-                {new Date(meal.timestamp).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' })} · {meal.protein}g P ·{' '}
-                {meal.carbs}g U · {meal.fats}g M
-              </Text>
-            </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={styles.mealKcal}>{Math.round(meal.calories)}</Text>
-              <Text style={styles.mealKcalLabel}>KCAL</Text>
-            </View>
-          </View>
+          </SwipeableRow>
         ))}
       </View>
     </ScrollView>
@@ -123,8 +123,6 @@ const styles = StyleSheet.create({
   ringCard: { borderRadius: 32, backgroundColor: '#17171A', borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', padding: 20, overflow: 'hidden' },
   ringHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   ringTitle: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 16, color: '#fff' },
-  ringBadge: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5 },
-  ringBadgeText: { fontFamily: 'Poppins_600SemiBold', fontSize: 10.5, color: 'rgba(255,255,255,0.55)' },
   ringWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 4 },
   consumedValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 50, color: '#fff' },
   consumedSub: { fontFamily: 'Poppins_500Medium', fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 5 },

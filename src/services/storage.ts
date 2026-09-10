@@ -32,6 +32,22 @@ export async function addMeal(meal: Meal): Promise<Meal[]> {
   return updated;
 }
 
+/** Removes a single entry, matched by index so legacy duplicate ids can't take
+ * more than one row with them. */
+export async function deleteMeal(id: string): Promise<Meal[]> {
+  const meals = await loadMeals();
+  const index = meals.findIndex(m => m.id === id);
+  if (index === -1) return meals;
+  const updated = meals.slice(0, index).concat(meals.slice(index + 1));
+  await AsyncStorage.setItem(KEYS.meals, JSON.stringify(updated));
+  return updated;
+}
+
+/** Unique across app restarts, unlike a plain in-memory counter. */
+export function createMealId(): string {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export function todayKey(date: Date = new Date()): string {
   return date.toISOString().slice(0, 10);
 }
