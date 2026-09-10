@@ -33,7 +33,7 @@ export function BottomNav({ state, navigation }: BottomTabBarProps) {
       locations={gradientLocations}
       start={{ x: 0, y: 0.2 }}
       end={{ x: 1, y: 0.8 }}
-      style={[styles.bar, { height: 72 + bottomInset, paddingBottom: bottomInset }]}
+      style={[styles.bar, { height: 81 + bottomInset, paddingBottom: bottomInset }]}
     >
       {state.routes.map((route, index) => {
         const focused = index === state.index;
@@ -48,7 +48,7 @@ export function BottomNav({ state, navigation }: BottomTabBarProps) {
         if (isCenter) {
           return (
             <Pressable key={route.key} onPress={onPress} style={styles.centerBtn}>
-              <Icon name="add" size={28} color="#fff" />
+              <Icon name="add" size={31} color="#fff" />
             </Pressable>
           );
         }
@@ -56,7 +56,7 @@ export function BottomNav({ state, navigation }: BottomTabBarProps) {
         return (
           <Pressable key={route.key} onPress={onPress} style={styles.tabBtn}>
             <View style={[styles.tabHighlight, { opacity: focused ? 1 : 0 }]} />
-            <Icon name={icon} size={26} color="#101012" />
+            <Icon name={icon} size={29} color="#101012" />
           </Pressable>
         );
       })}
@@ -81,9 +81,9 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   tabBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 17,
+    width: 58,
+    height: 58,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -93,13 +93,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderRadius: 17,
+    borderRadius: 19,
     backgroundColor: 'rgba(16,16,18,0.13)',
   },
   centerBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 63,
+    height: 63,
+    borderRadius: 31.5,
     backgroundColor: '#101012',
     alignItems: 'center',
     justifyContent: 'center',

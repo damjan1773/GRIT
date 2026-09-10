@@ -87,15 +87,8 @@ export function ProfileScreen({ profile, onEdit }: ProfileScreenProps) {
         <DetailRow icon="straighten" label="Visina" value={`${profile.heightCm}`} note="cm" />
         <DetailRow icon="directions_run" label="Aktivnost" value={activity.name} note={`×${activity.multiplier}`} />
         <DetailRow icon="monitor_heart" label="BMI" value={bmi.toFixed(1)} note={bmiLabel(bmi)} />
-      </View>
-
-      <Text style={styles.sectionTitle}>Kako smo izračunali</Text>
-      <View style={styles.card}>
-        <DetailRow first icon="local_fire_department" label="BMR" value={profile.bmr.toLocaleString('sr-RS')} note="kcal" />
+        <DetailRow icon="local_fire_department" label="BMR" value={profile.bmr.toLocaleString('sr-RS')} note="kcal" />
         <DetailRow icon="bolt" label="TDEE" value={profile.tdee.toLocaleString('sr-RS')} note="kcal" />
-        <Text style={styles.calcNote}>
-          BMR je izračunat po Mifflin-St Jeor formuli, a TDEE kao BMR × {activity.multiplier} za „{activity.name}“.
-        </Text>
       </View>
 
       <GradientButton label="Izmeni podatke" onPress={onEdit} style={styles.editBtn} />
@@ -150,15 +143,6 @@ const styles = StyleSheet.create({
   rowValueWrap: { flexDirection: 'row', alignItems: 'baseline', gap: 5 },
   rowValue: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 16, color: '#fff' },
   rowNote: { fontFamily: 'Poppins_500Medium', fontSize: 11.5, color: 'rgba(255,255,255,0.4)' },
-  calcNote: {
-    fontFamily: 'Poppins_400Regular',
-    fontSize: 11.5,
-    lineHeight: 18,
-    color: 'rgba(255,255,255,0.42)',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
-    paddingVertical: 14,
-  },
   editBtn: { marginTop: 26 },
   editHint: {
     fontFamily: 'Poppins_400Regular',
