@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { colors, gradientColors, gradientLocations, softGradientColors } from '../theme/colors';
 import { Icon } from '../components/Icon';
@@ -13,16 +13,25 @@ import { useAppData } from '../context/AppDataContext';
 const STEP_LABELS = ['KORAK 1 · O TEBI', 'KORAK 2 · MERE', 'KORAK 3 · AKTIVNOST', 'SPREMNO'];
 const CTA_LABELS = ['Nastavi', 'Nastavi', 'Izračunaj moj cilj', 'Uđi u aplikaciju'];
 
-export function OnboardingScreen() {
+interface OnboardingScreenProps {
+  /** When given, the flow starts prefilled and acts as "edit my details". */
+  initialProfile?: UserProfile | null;
+  /** Called after saving (or cancelling) instead of jumping to the dashboard. */
+  onDone?: () => void;
+}
+
+export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenProps = {}) {
   const navigation = useNavigation<any>();
   const { setProfile } = useAppData();
+  const isEditing = !!initialProfile;
 
   const [step, setStep] = useState(0);
-  const [sex, setSex] = useState<Sex>('f');
-  const [age, setAge] = useState(28);
-  const [weight, setWeight] = useState(64);
-  const [height, setHeight] = useState(170);
-  const [activity, setActivity] = useState<ActivityLevel>('moderate');
+  const [name, setName] = useState(initialProfile?.name ?? '');
+  const [sex, setSex] = useState<Sex>(initialProfile?.sex ?? 'f');
+  const [age, setAge] = useState(initialProfile?.age ?? 28);
+  const [weight, setWeight] = useState(initialProfile?.weightKg ?? 64);
+  const [height, setHeight] = useState(initialProfile?.heightCm ?? 170);
+  const [activity, setActivity] = useState<ActivityLevel>(initialProfile?.activity ?? 'moderate');
 
   const bmi = useMemo(() => calculateBMI(weight, height), [weight, height]);
   const bmr = useMemo(() => calculateBMR(weight, height, age, sex), [weight, height, age, sex]);
@@ -34,6 +43,7 @@ export function OnboardingScreen() {
   function next() {
     if (step >= 3) {
       const profile: UserProfile = {
+        name: name.trim(),
         sex,
         age,
         weightKg: weight,
@@ -45,7 +55,8 @@ export function OnboardingScreen() {
         macroGoals: macros,
       };
       setProfile(profile);
-      navigation.navigate('Dashboard');
+      if (onDone) onDone();
+      else navigation.navigate('Dashboard');
       return;
     }
     setStep(s => s + 1);
@@ -53,6 +64,7 @@ export function OnboardingScreen() {
 
   function back() {
     if (step > 0) setStep(s => s - 1);
+    else onDone?.();
   }
 
   return (
@@ -74,11 +86,21 @@ export function OnboardingScreen() {
         </View>
       </View>
 
-      <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: 20 }}>
+      <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
         {step === 0 && (
           <View>
             <Text style={styles.h2}>Ko si ti?</Text>
             <Text style={styles.sub}>Nekoliko podataka je dovoljno da izračunamo tvoj dnevni cilj kalorija i makronutrijenata.</Text>
+            <Text style={styles.fieldLabel}>IME</Text>
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              placeholder="Kako da te zovemo?"
+              placeholderTextColor="rgba(255,255,255,0.3)"
+              style={styles.nameInput}
+              maxLength={40}
+              autoCapitalize="words"
+            />
             <Text style={styles.fieldLabel}>POL</Text>
             <View style={styles.sexRow}>
               {(['f', 'm'] as Sex[]).map(id => {
@@ -217,7 +239,11 @@ export function OnboardingScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <GradientButton label={CTA_LABELS[step]} onPress={next} />
+        <GradientButton
+          label={isEditing && step === 3 ? 'Sačuvaj izmene' : CTA_LABELS[step]}
+          onPress={next}
+          disabled={step === 0 && !name.trim()}
+        />
       </View>
     </View>
   );
@@ -245,6 +271,18 @@ const styles = StyleSheet.create({
   h2: { fontFamily: 'Poppins_900Black_Italic', fontSize: 34, color: '#fff', letterSpacing: -0.3 },
   sub: { fontFamily: 'Poppins_400Regular', fontSize: 13.5, lineHeight: 21, color: 'rgba(255,255,255,0.5)', marginTop: 10, marginBottom: 26 },
   fieldLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 11, letterSpacing: 2, color: 'rgba(255,255,255,0.38)', marginBottom: 11 },
+  nameInput: {
+    backgroundColor: '#17171A',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.07)',
+    borderRadius: 24,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    marginBottom: 26,
+    color: '#fff',
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 16,
+  },
   sexRow: { flexDirection: 'row', gap: 11, marginBottom: 26 },
   sexOptionWrap: { flex: 1 },
   sexOption: { padding: 20, borderRadius: 24, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.09)' },

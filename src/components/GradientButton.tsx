@@ -8,11 +8,16 @@ interface GradientButtonProps {
   onPress: () => void;
   style?: ViewStyle;
   height?: number;
+  disabled?: boolean;
 }
 
-export function GradientButton({ label, onPress, style, height = 58 }: GradientButtonProps) {
+export function GradientButton({ label, onPress, style, height = 58, disabled }: GradientButtonProps) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }, style]}>
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      style={({ pressed }) => [{ opacity: disabled ? 0.35 : pressed ? 0.85 : 1 }, style]}
+    >
       <LinearGradient
         colors={gradientColors}
         locations={gradientLocations}

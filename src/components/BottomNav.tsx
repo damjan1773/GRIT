@@ -4,10 +4,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { gradientColors, gradientLocations } from '../theme/colors';
+import { useAppData } from '../context/AppDataContext';
 import { Icon } from './Icon';
 
 const TAB_ICON: Record<string, string> = {
-  Onboarding: 'person',
+  Profile: 'person',
   Dashboard: 'restaurant_menu',
   MealEntry: 'add',
   Stats: 'bar_chart',
@@ -16,8 +17,10 @@ const TAB_ICON: Record<string, string> = {
 
 export function BottomNav({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const { profile } = useAppData();
   const activeRouteName = state.routes[state.index].name;
-  if (activeRouteName === 'Onboarding') return null;
+  // Hidden only during first-time onboarding, so the setup flow stays focused.
+  if (activeRouteName === 'Profile' && !profile) return null;
 
   // The bar's rounded bottom corners already clear the home indicator, so only
   // a sliver of the safe-area inset is needed — the full inset leaves a dead

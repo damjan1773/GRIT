@@ -15,8 +15,6 @@ function initialsOf(name: string): string {
     .join('');
 }
 
-const USER_NAME = 'Mila Jovanović';
-
 export function DashboardScreen() {
   const { profile, todaysMeals } = useAppData();
 
@@ -40,11 +38,11 @@ export function DashboardScreen() {
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <View style={styles.headerRow}>
         <LinearGradient colors={gradientColors} locations={gradientLocations} style={styles.avatar}>
-          <Text style={styles.avatarText}>{initialsOf(USER_NAME)}</Text>
+          <Text style={styles.avatarText}>{initialsOf(profile.name)}</Text>
         </LinearGradient>
         <View style={{ flex: 1 }}>
           <Text style={styles.greeting}>Dobro jutro,</Text>
-          <Text style={styles.name}>{USER_NAME}</Text>
+          <Text style={styles.name}>{profile.name}</Text>
         </View>
         <View style={styles.menuDots}>
           <View style={[styles.dot, { backgroundColor: colors.mint }]} />

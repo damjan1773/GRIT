@@ -10,6 +10,7 @@ export interface ActivityOption {
 }
 
 export interface UserProfile {
+  name: string;
   sex: Sex;
   age: number;
   weightKg: number;
