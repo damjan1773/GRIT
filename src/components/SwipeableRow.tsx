@@ -13,9 +13,11 @@ interface SwipeableRowProps {
 export function SwipeableRow({ children, onDelete }: SwipeableRowProps) {
   const translateX = useRef(new Animated.Value(0)).current;
   const restingAt = useRef(0);
+  const currentX = useRef(0);
 
   function snapTo(value: number) {
     restingAt.current = value;
+    currentX.current = value;
     Animated.spring(translateX, {
       toValue: value,
       useNativeDriver: false,
@@ -24,18 +26,26 @@ export function SwipeableRow({ children, onDelete }: SwipeableRowProps) {
     }).start();
   }
 
+  // Past the halfway point the row stays open on the delete action.
+  function settle() {
+    snapTo(currentX.current < -ACTION_WIDTH / 2 ? -ACTION_WIDTH : 0);
+  }
+
   const panResponder = useRef(
     PanResponder.create({
       // Only claim clearly horizontal drags, so the list still scrolls.
       onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+      // Keep the swipe once it has started; otherwise the surrounding
+      // ScrollView takes the gesture on release and the row springs shut.
+      onPanResponderTerminationRequest: () => false,
       onPanResponderMove: (_e, g) => {
-        translateX.setValue(Math.min(0, Math.max(-ACTION_WIDTH, restingAt.current + g.dx)));
+        currentX.current = Math.min(0, Math.max(-ACTION_WIDTH, restingAt.current + g.dx));
+        translateX.setValue(currentX.current);
       },
-      onPanResponderRelease: (_e, g) => {
-        const next = restingAt.current + g.dx;
-        snapTo(next < -ACTION_WIDTH / 2 ? -ACTION_WIDTH : 0);
-      },
-      onPanResponderTerminate: () => snapTo(restingAt.current),
+      onPanResponderRelease: settle,
+      // Native scrolling can still cancel the touch outright — settle where the
+      // finger stopped rather than falling back to the closed position.
+      onPanResponderTerminate: settle,
     })
   ).current;
 
