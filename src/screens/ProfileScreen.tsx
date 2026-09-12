@@ -4,7 +4,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { colors, gradientColors, gradientLocations, softGradientColors } from '../theme/colors';
 import { Icon } from '../components/Icon';
 import { GradientButton } from '../components/GradientButton';
-import { bmiLabel, calculateBMI, getActivityOption } from '../utils/calculations';
+import { bmiLabel, calculateBMI, getActivityOption, goalLabel } from '../utils/calculations';
+import { formatSigned } from '../utils/format';
 import { UserProfile } from '../types';
 
 function initialsOf(name: string): string {
@@ -62,7 +63,7 @@ export function ProfileScreen({ profile, onEdit }: ProfileScreenProps) {
       <View style={styles.goalCard}>
         <Text style={styles.goalBadge}>DNEVNI CILJ</Text>
         <Text style={styles.goalValue}>{profile.targetCalories.toLocaleString('sr-RS')}</Text>
-        <Text style={styles.goalSub}>kcal na dan · Održavanje</Text>
+        <Text style={styles.goalSub}>kcal na dan · {goalLabel(profile.calorieAdjustment)}</Text>
         <View style={styles.macroRow}>
           <View style={[styles.macroBox, { backgroundColor: colors.mint }]}>
             <Text style={styles.macroValue}>{profile.macroGoals.protein}g</Text>
@@ -86,6 +87,12 @@ export function ProfileScreen({ profile, onEdit }: ProfileScreenProps) {
         <DetailRow icon="monitor_weight" label="Težina" value={`${profile.weightKg}`} note="kg" />
         <DetailRow icon="straighten" label="Visina" value={`${profile.heightCm}`} note="cm" />
         <DetailRow icon="directions_run" label="Aktivnost" value={activity.name} note={`×${activity.multiplier}`} />
+        <DetailRow
+          icon="flag"
+          label="Cilj"
+          value={goalLabel(profile.calorieAdjustment)}
+          note={profile.calorieAdjustment ? `${formatSigned(profile.calorieAdjustment)} kcal` : undefined}
+        />
         <DetailRow icon="monitor_heart" label="BMI" value={bmi.toFixed(1)} note={bmiLabel(bmi)} />
         <DetailRow icon="local_fire_department" label="BMR" value={profile.bmr.toLocaleString('sr-RS')} note="kcal" />
         <DetailRow icon="bolt" label="TDEE" value={profile.tdee.toLocaleString('sr-RS')} note="kcal" />

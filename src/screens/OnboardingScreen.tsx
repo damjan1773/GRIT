@@ -6,12 +6,29 @@ import { Icon } from '../components/Icon';
 import { StepperButton } from '../components/Stepper';
 import { GradientButton } from '../components/GradientButton';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ACTIVITY_LEVELS, calculateBMI, calculateBMR, calculateMacroGoals, calculateTDEE, bmiLabel } from '../utils/calculations';
+import Slider from '@react-native-community/slider';
+import {
+  ACTIVITY_LEVELS,
+  GOAL_ADJUSTMENT_LIMIT,
+  GOAL_ADJUSTMENT_STEP,
+  calculateBMI,
+  calculateBMR,
+  calculateMacroGoals,
+  calculateTDEE,
+  bmiLabel,
+  estimateWeightChangeKg,
+  goalLabel,
+} from '../utils/calculations';
+import { formatSigned } from '../utils/format';
 import { ActivityLevel, Sex, UserProfile } from '../types';
 import { useAppData } from '../context/AppDataContext';
 
-const STEP_LABELS = ['KORAK 1 · O TEBI', 'KORAK 2 · MERE', 'KORAK 3 · AKTIVNOST', 'SPREMNO'];
-const CTA_LABELS = ['Nastavi', 'Nastavi', 'Izračunaj moj cilj', 'Uđi u aplikaciju'];
+const STEP_LABELS = ['KORAK 1 · O TEBI', 'KORAK 2 · MERE', 'KORAK 3 · AKTIVNOST', 'KORAK 4 · CILJ', 'SPREMNO'];
+const CTA_LABELS = ['Nastavi', 'Nastavi', 'Nastavi', 'Izračunaj moj cilj', 'Uđi u aplikaciju'];
+const INPUT_STEPS = 4;
+const SUMMARY_STEP = INPUT_STEPS;
+/** Below this a daily target is aggressive enough to warrant a nudge. */
+const LOW_TARGET_KCAL = 1200;
 
 interface OnboardingScreenProps {
   /** When given, the flow starts prefilled and acts as "edit my details". */
@@ -32,16 +49,17 @@ export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenPro
   const [weight, setWeight] = useState(initialProfile?.weightKg ?? 64);
   const [height, setHeight] = useState(initialProfile?.heightCm ?? 170);
   const [activity, setActivity] = useState<ActivityLevel>(initialProfile?.activity ?? 'moderate');
+  const [adjustment, setAdjustment] = useState(initialProfile?.calorieAdjustment ?? 0);
 
   const bmi = useMemo(() => calculateBMI(weight, height), [weight, height]);
   const bmr = useMemo(() => calculateBMR(weight, height, age, sex), [weight, height, age, sex]);
   const tdee = useMemo(() => calculateTDEE(bmr, activity), [bmr, activity]);
-  const target = tdee;
+  const target = tdee + adjustment;
   const macros = useMemo(() => calculateMacroGoals(target), [target]);
   const activityOption = ACTIVITY_LEVELS.find(a => a.id === activity)!;
 
   function next() {
-    if (step >= 3) {
+    if (step >= SUMMARY_STEP) {
       const profile: UserProfile = {
         name: name.trim(),
         sex,
@@ -49,6 +67,7 @@ export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenPro
         weightKg: weight,
         heightCm: height,
         activity,
+        calorieAdjustment: adjustment,
         bmr,
         tdee,
         targetCalories: target,
@@ -75,12 +94,12 @@ export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenPro
             <Icon name="arrow_back" size={20} color="#fff" />
           </Pressable>
           <Text style={styles.stepLabel}>{STEP_LABELS[step]}</Text>
-          <Text style={styles.stepCount}>{step >= 3 ? '3/3' : `${step + 1}/3`}</Text>
+          <Text style={styles.stepCount}>{`${Math.min(step + 1, INPUT_STEPS)}/${INPUT_STEPS}`}</Text>
         </View>
         <View style={styles.segRow}>
-          {[0, 1, 2].map(i => (
+          {Array.from({ length: INPUT_STEPS }, (_, i) => (
             <View key={i} style={styles.segTrack}>
-              <View style={[styles.segFill, { width: i <= Math.min(step, 2) ? '100%' : '0%' }]} />
+              <View style={[styles.segFill, { width: i <= step ? '100%' : '0%' }]} />
             </View>
           ))}
         </View>
@@ -139,7 +158,7 @@ export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenPro
         {step === 1 && (
           <View>
             <Text style={styles.h2}>Tvoje mere</Text>
-            <Text style={styles.sub}>Uvek možeš da ih izmeniš kasnije u profilu.</Text>
+            <Text style={styles.sub}>Uvek možeš da ih izmeniš kasnije na profilu.</Text>
             <View style={{ gap: 12 }}>
               <View style={styles.measureCard}>
                 <Text style={styles.fieldLabel}>TEŽINA</Text>
@@ -176,7 +195,7 @@ export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenPro
         {step === 2 && (
           <View>
             <Text style={styles.h2}>Koliko se krećeš?</Text>
-            <Text style={styles.sub}>Ovo najviše utiče na tvoj dnevni cilj kalorija.</Text>
+            <Text style={styles.sub}>Pomozi nam da procenimo tvoj nivo aktivnosti.</Text>
             <View style={{ gap: 9 }}>
               {ACTIVITY_LEVELS.map(opt => {
                 const active = activity === opt.id;
@@ -207,12 +226,77 @@ export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenPro
         )}
 
         {step === 3 && (
+          <View>
+            <Text style={styles.h2}>Koji ti je cilj?</Text>
+            <Text style={styles.sub}>
+              Pomeri klizač ulevo za cut (mršavljenje) ili udesno za bulk (dobijanje mase). Nula je održavanje.
+            </Text>
+            <View style={styles.goalCard}>
+              <Text style={styles.fieldLabel}>DNEVNA RAZLIKA</Text>
+              <View style={styles.goalValueRow}>
+                <Text
+                  style={[styles.goalValue, { color: adjustment < 0 ? colors.lav : adjustment > 0 ? colors.mint : '#fff' }]}
+                >
+                  {formatSigned(adjustment)}
+                </Text>
+                <Text style={styles.measureUnit}>kcal</Text>
+              </View>
+              <Text style={styles.goalName}>{goalLabel(adjustment)}</Text>
+              <Slider
+                style={styles.slider}
+                minimumValue={-GOAL_ADJUSTMENT_LIMIT}
+                maximumValue={GOAL_ADJUSTMENT_LIMIT}
+                step={GOAL_ADJUSTMENT_STEP}
+                value={adjustment}
+                onValueChange={v => setAdjustment(Math.round(v))}
+                minimumTrackTintColor={colors.lav}
+                maximumTrackTintColor={colors.mint}
+                thumbTintColor="#fff"
+              />
+              <View style={styles.sliderEnds}>
+                <Text style={styles.sliderEnd}>CUT {formatSigned(-GOAL_ADJUSTMENT_LIMIT)}</Text>
+                <Text style={styles.sliderEnd}>0</Text>
+                <Text style={styles.sliderEnd}>BULK {formatSigned(GOAL_ADJUSTMENT_LIMIT)}</Text>
+              </View>
+            </View>
+            <View style={styles.estimateCard}>
+              <Icon
+                name={adjustment < 0 ? 'trending_down' : adjustment > 0 ? 'trending_up' : 'trending_flat'}
+                size={20}
+                color={colors.mint}
+              />
+              <Text style={styles.estimateText}>
+                {adjustment === 0 ? (
+                  'Održavaš trenutnu težinu.'
+                ) : (
+                  <>
+                    <Text style={styles.estimateStrong}>{formatSigned(estimateWeightChangeKg(adjustment, 7), 2)} kg</Text>{' '}
+                    nedeljno ·{' '}
+                    <Text style={styles.estimateStrong}>{formatSigned(estimateWeightChangeKg(adjustment, 30), 1)} kg</Text>{' '}
+                    mesečno
+                  </>
+                )}
+              </Text>
+            </View>
+            <Text style={styles.estimateNote}>
+              Dnevni cilj: {target.toLocaleString('sr-RS')} kcal. Procena — stvarna promena zavisi od organizma i doslednosti.
+            </Text>
+            {target < LOW_TARGET_KCAL && (
+              <Text style={styles.lowWarning}>
+                Cilj od {target.toLocaleString('sr-RS')} kcal je ispod {LOW_TARGET_KCAL.toLocaleString('sr-RS')} kcal dnevno —
+                razmisli o manjem deficitu.
+              </Text>
+            )}
+          </View>
+        )}
+
+        {step === SUMMARY_STEP && (
           <View style={{ alignItems: 'center', paddingTop: 14 }}>
             <LinearGradient colors={gradientColors} locations={gradientLocations} style={styles.badge}>
               <Text style={styles.badgeText}>TVOJ DNEVNI CILJ</Text>
             </LinearGradient>
             <Text style={styles.targetValue}>{target.toLocaleString('sr-RS')}</Text>
-            <Text style={styles.targetSub}>kcal na dan · Održavanje</Text>
+            <Text style={styles.targetSub}>kcal na dan · {goalLabel(adjustment)}</Text>
             <View style={styles.macroRow}>
               <View style={[styles.macroBox, { backgroundColor: colors.mint }]}>
                 <Text style={styles.macroValue}>{macros.protein}g</Text>
@@ -227,20 +311,13 @@ export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenPro
                 <Text style={styles.macroLabel}>Masti</Text>
               </View>
             </View>
-            <View style={styles.calcCard}>
-              <Text style={styles.calcTitle}>Kako smo izračunali</Text>
-              <Text style={styles.calcDesc}>
-                BMR {bmr.toLocaleString('sr-RS')} kcal (Mifflin-St Jeor) × {activityOption.multiplier} za „{activityOption.name}“ = TDEE{' '}
-                {tdee.toLocaleString('sr-RS')} kcal.
-              </Text>
-            </View>
           </View>
         )}
       </ScrollView>
 
       <View style={styles.footer}>
         <GradientButton
-          label={isEditing && step === 3 ? 'Sačuvaj izmene' : CTA_LABELS[step]}
+          label={isEditing && step === SUMMARY_STEP ? 'Sačuvaj izmene' : CTA_LABELS[step]}
           onPress={next}
           disabled={step === 0 && !name.trim()}
         />
@@ -348,5 +425,33 @@ const styles = StyleSheet.create({
   },
   calcTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: '#fff', marginBottom: 6 },
   calcDesc: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, lineHeight: 18, color: 'rgba(255,255,255,0.45)' },
+  goalCard: {
+    padding: 18,
+    borderRadius: 26,
+    backgroundColor: '#17171A',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.07)',
+  },
+  goalValueRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', marginTop: 4 },
+  goalValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 48, letterSpacing: -1 },
+  goalName: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: 'rgba(255,255,255,0.55)', textAlign: 'center', marginTop: 2 },
+  slider: { width: '100%', height: 40, marginTop: 14 },
+  sliderEnds: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 },
+  sliderEnd: { fontFamily: 'Poppins_600SemiBold', fontSize: 10, letterSpacing: 1, color: 'rgba(255,255,255,0.38)' },
+  estimateCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 12,
+    padding: 14,
+    borderRadius: 22,
+    backgroundColor: 'rgba(143,233,206,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(143,233,206,0.18)',
+  },
+  estimateText: { flex: 1, fontFamily: 'Poppins_500Medium', fontSize: 13, color: 'rgba(255,255,255,0.72)' },
+  estimateStrong: { fontFamily: 'Poppins_700Bold', color: '#fff' },
+  estimateNote: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, lineHeight: 17, color: 'rgba(255,255,255,0.4)', marginTop: 10 },
+  lowWarning: { fontFamily: 'Poppins_500Medium', fontSize: 12, lineHeight: 18, color: '#FF6B6B', marginTop: 10 },
   footer: { padding: 26, paddingBottom: 34 },
 });

@@ -16,6 +16,8 @@ export interface UserProfile {
   weightKg: number;
   heightCm: number;
   activity: ActivityLevel;
+  /** Daily kcal offset from TDEE: negative cuts, positive bulks, 0 maintains. */
+  calorieAdjustment: number;
   bmr: number;
   tdee: number;
   targetCalories: number;

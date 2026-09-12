@@ -41,3 +41,21 @@ export function bmiLabel(bmi: number): string {
   if (bmi < 30) return 'povišena telesna masa';
   return 'visoka telesna masa';
 }
+
+/** The goal slider's reach either side of maintenance, in kcal/day. */
+export const GOAL_ADJUSTMENT_LIMIT = 1000;
+export const GOAL_ADJUSTMENT_STEP = 50;
+
+/** Rough energy content of a kilogram of body mass — good enough for estimates. */
+export const KCAL_PER_KG = 7700;
+
+export function goalLabel(calorieAdjustment: number): string {
+  if (calorieAdjustment < 0) return 'Mršavljenje';
+  if (calorieAdjustment > 0) return 'Dobijanje mase';
+  return 'Održavanje';
+}
+
+/** Estimated body-mass change in kg after `days` at a steady daily offset. */
+export function estimateWeightChangeKg(calorieAdjustment: number, days: number): number {
+  return (calorieAdjustment * days) / KCAL_PER_KG;
+}

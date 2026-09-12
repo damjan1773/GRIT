@@ -17,7 +17,12 @@ export async function loadProfile(): Promise<UserProfile | null> {
   const raw = await AsyncStorage.getItem(KEYS.profile);
   if (!raw) return null;
   const parsed = JSON.parse(raw) as UserProfile;
-  return { ...parsed, name: parsed.name?.trim() || DEFAULT_USER_NAME };
+  return {
+    ...parsed,
+    name: parsed.name?.trim() || DEFAULT_USER_NAME,
+    // Saved before goals existed: those targets were plain maintenance.
+    calorieAdjustment: typeof parsed.calorieAdjustment === 'number' ? parsed.calorieAdjustment : 0,
+  };
 }
 
 export async function loadMeals(): Promise<Meal[]> {
