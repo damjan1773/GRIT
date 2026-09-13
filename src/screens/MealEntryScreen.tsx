@@ -7,7 +7,8 @@ import { Icon } from '../components/Icon';
 import { parseMealFromText } from '../services/mealParser';
 import { MealParseItem } from '../services/mealParser.types';
 import { useAppData } from '../context/AppDataContext';
-import { createMealId, todayKey } from '../services/storage';
+import { createMealId } from '../services/storage';
+import { forDay } from '../utils/dates';
 
 type ChatMessage =
   | { id: string; kind: 'bot'; text: string }
@@ -44,7 +45,7 @@ function cardTotals(items: MealParseItem[]) {
 
 export function MealEntryScreen() {
   const navigation = useNavigation<any>();
-  const { profile, todaysMeals, addMeal } = useAppData();
+  const { profile, todayKey, selectedDateKey, dayMeals, addMeal } = useAppData();
   const scrollRef = useRef<ScrollView>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -57,7 +58,8 @@ export function MealEntryScreen() {
     return () => clearTimeout(t);
   }, [messages]);
 
-  const consumed = todaysMeals.reduce((sum, m) => sum + m.calories, 0);
+  const isToday = selectedDateKey === todayKey;
+  const consumed = dayMeals.reduce((sum, m) => sum + m.calories, 0);
 
   async function handleSend(rawText?: string) {
     const text = (rawText ?? input).trim();
@@ -103,7 +105,7 @@ export function MealEntryScreen() {
       carbs: totals.carbs,
       fats: totals.fats,
       timestamp: Date.now(),
-      dateKey: todayKey(),
+      dateKey: selectedDateKey,
     };
     await addMeal(meal);
 
@@ -115,7 +117,7 @@ export function MealEntryScreen() {
         {
           id: nextId(),
           kind: 'bot',
-          text: `Upisano: ${totals.calories.toLocaleString('sr-RS')} kcal. Ostalo ti je ${left.toLocaleString('sr-RS')} kcal za danas.`,
+          text: `Upisano: ${totals.calories.toLocaleString('sr-RS')} kcal. Ostalo ti je ${left.toLocaleString('sr-RS')} kcal ${forDay(selectedDateKey, todayKey)}.`,
         },
       ])
     );
@@ -133,7 +135,10 @@ export function MealEntryScreen() {
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>Brzi unos</Text>
-          <Text style={styles.headerSub}>piši prirodnim jezikom</Text>
+          {/* Off today, say so loudly — it's where the meal will be saved. */}
+          <Text style={[styles.headerSub, !isToday && { color: colors.mint }]}>
+            {isToday ? 'piši prirodnim jezikom' : `unos ${forDay(selectedDateKey, todayKey)}`}
+          </Text>
         </View>
         <LinearGradient colors={gradientColors} locations={gradientLocations} style={styles.kcalBadge}>
           <Text style={styles.kcalBadgeText}>{Math.round(consumed).toLocaleString('sr-RS')} kcal</Text>

@@ -53,10 +53,6 @@ export function createMealId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function todayKey(date: Date = new Date()): string {
-  return date.toISOString().slice(0, 10);
-}
-
 export async function loadMealsForDate(dateKey: string): Promise<Meal[]> {
   const meals = await loadMeals();
   return meals.filter(m => m.dateKey === dateKey);

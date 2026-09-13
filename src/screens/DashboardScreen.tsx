@@ -1,12 +1,14 @@
-import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, gradientColors, gradientLocations, softGradientColors } from '../theme/colors';
 import { Icon } from '../components/Icon';
 import { ProgressRing } from '../components/ProgressRing';
 import { MacroCard } from '../components/MacroCard';
 import { SwipeableRow } from '../components/SwipeableRow';
+import { DayPicker } from '../components/DayPicker';
 import { useAppData } from '../context/AppDataContext';
+import { dayLabel } from '../utils/dates';
 
 function initialsOf(name: string): string {
   return name
@@ -17,7 +19,8 @@ function initialsOf(name: string): string {
 }
 
 export function DashboardScreen() {
-  const { profile, todaysMeals, deleteMeal } = useAppData();
+  const { profile, todayKey, selectedDateKey, setSelectedDateKey, dayMeals, deleteMeal } = useAppData();
+  const [dayPickerOpen, setDayPickerOpen] = useState(false);
 
   if (!profile) {
     return (
@@ -27,7 +30,8 @@ export function DashboardScreen() {
     );
   }
 
-  const consumed = todaysMeals.reduce(
+  const isToday = selectedDateKey === todayKey;
+  const consumed = dayMeals.reduce(
     (acc, m) => ({ k: acc.k + m.calories, p: acc.p + m.protein, c: acc.c + m.carbs, f: acc.f + m.fats }),
     { k: 0, p: 0, c: 0, f: 0 }
   );
@@ -45,16 +49,31 @@ export function DashboardScreen() {
           <Text style={styles.greeting}>Dobro jutro,</Text>
           <Text style={styles.name}>{profile.name}</Text>
         </View>
-        <View style={styles.menuDots}>
+        <Pressable
+          onPress={() => setDayPickerOpen(open => !open)}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={dayPickerOpen ? 'Zatvori izbor dana' : 'Izaberi dan'}
+          style={styles.menuDots}
+        >
           <View style={[styles.dot, { backgroundColor: colors.mint }]} />
           <View style={[styles.dot, { backgroundColor: colors.mid }]} />
           <View style={[styles.dot, { backgroundColor: colors.lav }]} />
-        </View>
+        </Pressable>
       </View>
+
+      {dayPickerOpen && (
+        <DayPicker todayKey={todayKey} selectedDateKey={selectedDateKey} onSelect={setSelectedDateKey} />
+      )}
 
       <View style={styles.ringCard}>
         <View style={styles.ringHeader}>
           <Text style={styles.ringTitle}>Dnevni unos</Text>
+          {!isToday && (
+            <View style={styles.dayPill}>
+              <Text style={styles.dayPillText}>{dayLabel(selectedDateKey, todayKey)}</Text>
+            </View>
+          )}
         </View>
         <View style={styles.ringWrap}>
           <ProgressRing progress={pct}>
@@ -80,8 +99,10 @@ export function DashboardScreen() {
         <Text style={styles.sectionTitle}>Poslednji obroci</Text>
       </View>
       <View style={{ gap: 9 }}>
-        {todaysMeals.length === 0 && <Text style={styles.emptyMeals}>Još nema unetih obroka danas.</Text>}
-        {todaysMeals.map(meal => (
+        {dayMeals.length === 0 && (
+          <Text style={styles.emptyMeals}>{isToday ? 'Još nema unetih obroka danas.' : 'Nema unetih obroka za ovaj dan.'}</Text>
+        )}
+        {dayMeals.map(meal => (
           <SwipeableRow key={meal.id} onDelete={() => deleteMeal(meal.id)}>
             <View style={styles.mealRow}>
               <View style={styles.mealIconWrap}>
@@ -123,6 +144,8 @@ const styles = StyleSheet.create({
   ringCard: { borderRadius: 32, backgroundColor: '#17171A', borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', padding: 20, overflow: 'hidden' },
   ringHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   ringTitle: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 16, color: '#fff' },
+  dayPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99, backgroundColor: 'rgba(143,233,206,0.13)' },
+  dayPillText: { fontFamily: 'Poppins_700Bold', fontSize: 11, color: colors.mint },
   ringWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 4 },
   consumedValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 50, color: '#fff' },
   consumedSub: { fontFamily: 'Poppins_500Medium', fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 5 },
