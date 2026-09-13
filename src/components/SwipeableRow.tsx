@@ -49,9 +49,13 @@ export function SwipeableRow({ children, onDelete }: SwipeableRowProps) {
     })
   ).current;
 
+  // Hidden while the row is closed: at rest the red layer would otherwise show
+  // through the row's anti-aliased edges, which is plain to see on a light page.
+  const actionOpacity = translateX.interpolate({ inputRange: [-1, 0], outputRange: [1, 0], extrapolate: 'clamp' });
+
   return (
     <View style={styles.wrap}>
-      <View style={styles.actionLayer}>
+      <Animated.View style={[styles.actionLayer, { opacity: actionOpacity }]}>
         <Pressable
           onPress={() => {
             snapTo(0);
@@ -61,7 +65,7 @@ export function SwipeableRow({ children, onDelete }: SwipeableRowProps) {
         >
           <Icon name="delete" size={22} color="#101012" />
         </Pressable>
-      </View>
+      </Animated.View>
       <Animated.View style={{ transform: [{ translateX }] }} {...panResponder.panHandlers}>
         {children}
       </Animated.View>

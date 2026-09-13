@@ -3,6 +3,8 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, gradientColors, gradientLocations } from '../theme/colors';
+import { Theme, whiteChipEdge } from '../theme/theme';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { Icon } from '../components/Icon';
 import { parseMealFromText } from '../services/mealParser';
 import { MealParseItem } from '../services/mealParser.types';
@@ -46,6 +48,8 @@ function cardTotals(items: MealParseItem[]) {
 export function MealEntryScreen() {
   const navigation = useNavigation<any>();
   const { profile, todayKey, selectedDateKey, dayMeals, addMeal } = useAppData();
+  const { theme } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const scrollRef = useRef<ScrollView>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -131,7 +135,7 @@ export function MealEntryScreen() {
     >
       <View style={styles.header}>
         <Pressable onPress={() => navigation.navigate('Dashboard')} style={styles.backBtn}>
-          <Icon name="arrow_back" size={19} color="#fff" />
+          <Icon name="arrow_back" size={19} color={theme.text} />
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>Brzi unos</Text>
@@ -197,13 +201,13 @@ export function MealEntryScreen() {
                     {message.pending ? (
                       <View style={styles.qtyControls}>
                         <Pressable onPress={() => changeQty(message.id, index, -1)} style={styles.qtyBtn}>
-                          <Icon name="remove" size={15} color="#fff" />
+                          <Icon name="remove" size={15} color={theme.text} />
                         </Pressable>
                         <Text style={styles.qtyLabel}>
                           {item.qty} {item.unitLabel}
                         </Text>
                         <Pressable onPress={() => changeQty(message.id, index, 1)} style={styles.qtyBtn}>
-                          <Icon name="add" size={15} color="#fff" />
+                          <Icon name="add" size={15} color={theme.text} />
                         </Pressable>
                       </View>
                     ) : (
@@ -217,7 +221,7 @@ export function MealEntryScreen() {
               })}
 
               <View style={styles.totalsRow}>
-                <View style={[styles.totalBox, { flex: 1.15, backgroundColor: '#fff' }]}>
+                <View style={[styles.totalBox, { flex: 1.15, backgroundColor: colors.white }, whiteChipEdge(theme)]}>
                   <Text style={styles.totalValue}>{totals.calories}</Text>
                   <Text style={styles.totalLabel}>KCAL</Text>
                 </View>
@@ -230,8 +234,8 @@ export function MealEntryScreen() {
                   <Text style={styles.totalLabel}>UGLJ</Text>
                 </View>
                 <View style={[styles.totalBox, styles.totalBoxOutline]}>
-                  <Text style={[styles.totalValue, { color: '#fff' }]}>{totals.fats}</Text>
-                  <Text style={[styles.totalLabel, { color: 'rgba(255,255,255,0.5)' }]}>MASTI</Text>
+                  <Text style={[styles.totalValue, { color: theme.text }]}>{totals.fats}</Text>
+                  <Text style={[styles.totalLabel, { color: theme.ink(0.5) }]}>MASTI</Text>
                 </View>
               </View>
 
@@ -244,7 +248,7 @@ export function MealEntryScreen() {
                       </LinearGradient>
                     </Pressable>
                     <Pressable onPress={() => dismissCard(message.id)} style={styles.dismissBtn}>
-                      <Icon name="close" size={20} color="rgba(255,255,255,0.6)" />
+                      <Icon name="close" size={20} color={theme.ink(0.6)} />
                     </Pressable>
                   </View>
                   <Text style={styles.hint}>Podesi količine strelicama pre čuvanja</Text>
@@ -274,7 +278,7 @@ export function MealEntryScreen() {
             onChangeText={setInput}
             onSubmitEditing={() => handleSend()}
             placeholder="Šta si pojeo?"
-            placeholderTextColor="rgba(255,255,255,0.4)"
+            placeholderTextColor={theme.ink(0.4)}
             style={styles.input}
           />
           <Pressable onPress={() => handleSend()}>
@@ -288,107 +292,108 @@ export function MealEntryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    paddingTop: 58,
-    paddingHorizontal: 20,
-    paddingBottom: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
-  },
-  backBtn: { width: 38, height: 38, borderRadius: 13, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 16, color: '#fff' },
-  headerSub: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: 'rgba(255,255,255,0.42)', marginTop: 1 },
-  kcalBadge: { paddingHorizontal: 11, paddingVertical: 6, borderRadius: 99 },
-  kcalBadgeText: { fontFamily: 'Poppins_700Bold', fontSize: 10.5, color: '#101012' },
-  chatArea: { flex: 1 },
-  botBubble: {
-    maxWidth: '82%',
-    padding: 13,
-    paddingHorizontal: 16,
-    borderRadius: 22,
-    borderBottomLeftRadius: 7,
-    backgroundColor: '#17171A',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    alignSelf: 'flex-start',
-  },
-  botText: { fontFamily: 'Poppins_400Regular', fontSize: 13, lineHeight: 20, color: 'rgba(255,255,255,0.82)' },
-  userBubble: { maxWidth: '82%', padding: 13, paddingHorizontal: 16, borderRadius: 22, borderTopRightRadius: 7, alignSelf: 'flex-end' },
-  userText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, lineHeight: 19, color: '#101012' },
-  typingBubble: {
-    flexDirection: 'row',
-    gap: 5,
-    padding: 15,
-    paddingHorizontal: 17,
-    borderRadius: 22,
-    borderBottomLeftRadius: 7,
-    backgroundColor: '#17171A',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    alignSelf: 'flex-start',
-  },
-  typingDot: { width: 7, height: 7, borderRadius: 4 },
-  card: { borderRadius: 26, backgroundColor: '#17171A', borderWidth: 1, borderColor: 'rgba(255,255,255,0.09)', padding: 16 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 12 },
-  cardIcon: { width: 27, height: 27, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  cardTitle: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 14, color: '#fff' },
-  cardBadge: { marginLeft: 'auto', fontFamily: 'Poppins_500Medium', fontSize: 10.5, color: 'rgba(255,255,255,0.36)' },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
-  },
-  itemName: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: '#fff' },
-  itemMacro: { fontFamily: 'Poppins_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.38)', marginTop: 2 },
-  qtyControls: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  qtyBtn: { width: 28, height: 28, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center' },
-  qtyLabel: { minWidth: 54, textAlign: 'center', fontFamily: 'Poppins_700Bold', fontSize: 11.5, color: colors.mint },
-  qtyLabelLocked: { fontFamily: 'Poppins_600SemiBold', fontSize: 11.5, color: 'rgba(255,255,255,0.5)' },
-  itemKcal: { width: 50, textAlign: 'right', fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 13.5, color: '#fff' },
-  totalsRow: { flexDirection: 'row', gap: 7, marginTop: 14 },
-  totalBox: { flex: 1, paddingVertical: 12, paddingHorizontal: 10, borderRadius: 18, alignItems: 'flex-start' },
-  totalBoxOutline: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)' },
-  totalValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 19, color: '#101012' },
-  totalLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 9.5, letterSpacing: 1, opacity: 0.6, color: '#101012', marginTop: 4 },
-  actionsRow: { flexDirection: 'row', gap: 9, marginTop: 15 },
-  saveBtn: { height: 48, borderRadius: 99, alignItems: 'center', justifyContent: 'center' },
-  saveBtnText: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 14, color: '#101012' },
-  dismissBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.14)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  hint: { fontFamily: 'Poppins_400Regular', fontSize: 10.5, lineHeight: 16, color: 'rgba(255,255,255,0.3)', marginTop: 10, textAlign: 'center' },
-  savedRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 13 },
-  savedText: { fontFamily: 'Poppins_700Bold', fontSize: 12, color: colors.mint },
-  footer: { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)', paddingTop: 12, paddingBottom: 10, paddingHorizontal: 18 },
-  chipsRow: { gap: 8, paddingBottom: 11 },
-  chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 99, borderWidth: 1, borderColor: 'rgba(255,255,255,0.13)' },
-  chipText: { fontFamily: 'Poppins_500Medium', fontSize: 11.5, color: 'rgba(255,255,255,0.68)' },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
-    backgroundColor: '#17171A',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.09)',
-    borderRadius: 99,
-    paddingLeft: 17,
-    paddingVertical: 6,
-    paddingRight: 6,
-  },
-  input: { flex: 1, minWidth: 0, color: '#fff', fontFamily: 'Poppins_500Medium', fontSize: 13.5, paddingVertical: 6 },
-  sendBtn: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
-});
+const makeStyles = (t: Theme) =>
+  StyleSheet.create({
+    screen: { flex: 1, backgroundColor: t.bg },
+    header: {
+      paddingTop: 58,
+      paddingHorizontal: 20,
+      paddingBottom: 14,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: t.ink(0.06),
+    },
+    backBtn: { width: 38, height: 38, borderRadius: 13, borderWidth: 1, borderColor: t.ink(0.12), alignItems: 'center', justifyContent: 'center' },
+    headerTitle: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 16, color: t.text },
+    headerSub: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: t.ink(0.42), marginTop: 1 },
+    kcalBadge: { paddingHorizontal: 11, paddingVertical: 6, borderRadius: 99 },
+    kcalBadgeText: { fontFamily: 'Poppins_700Bold', fontSize: 10.5, color: '#101012' },
+    chatArea: { flex: 1 },
+    botBubble: {
+      maxWidth: '82%',
+      padding: 13,
+      paddingHorizontal: 16,
+      borderRadius: 22,
+      borderBottomLeftRadius: 7,
+      backgroundColor: t.surface,
+      borderWidth: 1,
+      borderColor: t.ink(0.07),
+      alignSelf: 'flex-start',
+    },
+    botText: { fontFamily: 'Poppins_400Regular', fontSize: 13, lineHeight: 20, color: t.ink(0.82) },
+    userBubble: { maxWidth: '82%', padding: 13, paddingHorizontal: 16, borderRadius: 22, borderTopRightRadius: 7, alignSelf: 'flex-end' },
+    userText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, lineHeight: 19, color: '#101012' },
+    typingBubble: {
+      flexDirection: 'row',
+      gap: 5,
+      padding: 15,
+      paddingHorizontal: 17,
+      borderRadius: 22,
+      borderBottomLeftRadius: 7,
+      backgroundColor: t.surface,
+      borderWidth: 1,
+      borderColor: t.ink(0.07),
+      alignSelf: 'flex-start',
+    },
+    typingDot: { width: 7, height: 7, borderRadius: 4 },
+    card: { borderRadius: 26, backgroundColor: t.surface, borderWidth: 1, borderColor: t.ink(0.09), padding: 16 },
+    cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 12 },
+    cardIcon: { width: 27, height: 27, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+    cardTitle: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 14, color: t.text },
+    cardBadge: { marginLeft: 'auto', fontFamily: 'Poppins_500Medium', fontSize: 10.5, color: t.ink(0.36) },
+    itemRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      paddingVertical: 10,
+      borderTopWidth: 1,
+      borderTopColor: t.ink(0.06),
+    },
+    itemName: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: t.text },
+    itemMacro: { fontFamily: 'Poppins_400Regular', fontSize: 11, color: t.ink(0.38), marginTop: 2 },
+    qtyControls: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+    qtyBtn: { width: 28, height: 28, borderRadius: 10, borderWidth: 1, borderColor: t.ink(0.14), alignItems: 'center', justifyContent: 'center' },
+    qtyLabel: { minWidth: 54, textAlign: 'center', fontFamily: 'Poppins_700Bold', fontSize: 11.5, color: colors.mint },
+    qtyLabelLocked: { fontFamily: 'Poppins_600SemiBold', fontSize: 11.5, color: t.ink(0.5) },
+    itemKcal: { width: 50, textAlign: 'right', fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 13.5, color: t.text },
+    totalsRow: { flexDirection: 'row', gap: 7, marginTop: 14 },
+    totalBox: { flex: 1, paddingVertical: 12, paddingHorizontal: 10, borderRadius: 18, alignItems: 'flex-start' },
+    totalBoxOutline: { borderWidth: 1, borderColor: t.ink(0.14) },
+    totalValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 19, color: '#101012' },
+    totalLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 9.5, letterSpacing: 1, opacity: 0.6, color: '#101012', marginTop: 4 },
+    actionsRow: { flexDirection: 'row', gap: 9, marginTop: 15 },
+    saveBtn: { height: 48, borderRadius: 99, alignItems: 'center', justifyContent: 'center' },
+    saveBtnText: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 14, color: '#101012' },
+    dismissBtn: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: t.ink(0.14),
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    hint: { fontFamily: 'Poppins_400Regular', fontSize: 10.5, lineHeight: 16, color: t.ink(0.3), marginTop: 10, textAlign: 'center' },
+    savedRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 13 },
+    savedText: { fontFamily: 'Poppins_700Bold', fontSize: 12, color: colors.mint },
+    footer: { borderTopWidth: 1, borderTopColor: t.ink(0.06), paddingTop: 12, paddingBottom: 10, paddingHorizontal: 18 },
+    chipsRow: { gap: 8, paddingBottom: 11 },
+    chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 99, borderWidth: 1, borderColor: t.ink(0.13) },
+    chipText: { fontFamily: 'Poppins_500Medium', fontSize: 11.5, color: t.ink(0.68) },
+    inputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 9,
+      backgroundColor: t.surface,
+      borderWidth: 1,
+      borderColor: t.ink(0.09),
+      borderRadius: 99,
+      paddingLeft: 17,
+      paddingVertical: 6,
+      paddingRight: 6,
+    },
+    input: { flex: 1, minWidth: 0, color: t.text, fontFamily: 'Poppins_500Medium', fontSize: 13.5, paddingVertical: 6 },
+    sendBtn: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
+  });

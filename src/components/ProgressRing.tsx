@@ -2,6 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 
 interface ProgressRingProps {
   size?: number;
@@ -11,6 +12,7 @@ interface ProgressRingProps {
 }
 
 export function ProgressRing({ size = 210, strokeWidth = 17, progress, children }: ProgressRingProps) {
+  const { theme } = useTheme();
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const clamped = Math.max(0, Math.min(1, progress));
@@ -27,7 +29,7 @@ export function ProgressRing({ size = 210, strokeWidth = 17, progress, children 
             <Stop offset="100%" stopColor={colors.lav} />
           </LinearGradient>
         </Defs>
-        <Circle cx={center} cy={center} r={radius} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={strokeWidth} />
+        <Circle cx={center} cy={center} r={radius} fill="none" stroke={theme.ink(0.07)} strokeWidth={strokeWidth} />
         <Circle
           cx={center}
           cy={center}

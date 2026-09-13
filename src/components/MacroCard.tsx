@@ -1,5 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { colors } from '../theme/colors';
+import { whiteChipEdge } from '../theme/theme';
+import { useTheme } from '../theme/ThemeContext';
 
 interface MacroCardProps {
   label: string;
@@ -9,9 +12,10 @@ interface MacroCardProps {
 }
 
 export function MacroCard({ label, current, goal, bg }: MacroCardProps) {
+  const { theme } = useTheme();
   const pct = Math.min(100, Math.round((current / goal) * 100));
   return (
-    <View style={[styles.card, { backgroundColor: bg }]}>
+    <View style={[styles.card, { backgroundColor: bg }, bg === colors.white && whiteChipEdge(theme)]}>
       <Text style={styles.label}>{label}</Text>
       <Text style={styles.value}>
         {Math.round(current)}

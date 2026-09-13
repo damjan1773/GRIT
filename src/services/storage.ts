@@ -1,10 +1,21 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Meal, UserProfile } from '../types';
+import { ThemeMode } from '../theme/theme';
 
 const KEYS = {
   profile: 'nutra:profile',
   meals: 'nutra:meals',
+  theme: 'nutra:theme',
 };
+
+export async function loadThemeMode(): Promise<ThemeMode | null> {
+  const raw = await AsyncStorage.getItem(KEYS.theme);
+  return raw === 'light' || raw === 'dark' ? raw : null;
+}
+
+export async function saveThemeMode(mode: ThemeMode): Promise<void> {
+  await AsyncStorage.setItem(KEYS.theme, mode);
+}
 
 export async function saveProfile(profile: UserProfile): Promise<void> {
   await AsyncStorage.setItem(KEYS.profile, JSON.stringify(profile));

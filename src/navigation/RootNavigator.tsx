@@ -7,18 +7,19 @@ import { MealEntryScreen } from '../screens/MealEntryScreen';
 import { ComingSoonScreen } from '../screens/ComingSoonScreen';
 import { BottomNav } from '../components/BottomNav';
 import { useAppData } from '../context/AppDataContext';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 
 const Tab = createBottomTabNavigator();
 
 export function RootNavigator() {
   const { profile } = useAppData();
+  const { theme } = useTheme();
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: theme.bg }]}>
       <Tab.Navigator
         initialRouteName={profile ? 'Dashboard' : 'Profile'}
-        screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.bg } }}
+        screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: theme.bg } }}
         tabBar={props => <BottomNav {...props} />}
       >
         <Tab.Screen name="Profile" component={ProfileTabScreen} />
@@ -32,5 +33,5 @@ export function RootNavigator() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
+  root: { flex: 1 },
 });

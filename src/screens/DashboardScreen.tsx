@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, gradientColors, gradientLocations, softGradientColors } from '../theme/colors';
+import { Theme } from '../theme/theme';
+import { useThemedStyles } from '../theme/ThemeContext';
 import { Icon } from '../components/Icon';
 import { ProgressRing } from '../components/ProgressRing';
 import { MacroCard } from '../components/MacroCard';
@@ -21,6 +23,7 @@ function initialsOf(name: string): string {
 export function DashboardScreen() {
   const { profile, todayKey, selectedDateKey, setSelectedDateKey, dayMeals, deleteMeal } = useAppData();
   const [dayPickerOpen, setDayPickerOpen] = useState(false);
+  const styles = useThemedStyles(makeStyles);
 
   if (!profile) {
     return (
@@ -92,7 +95,7 @@ export function DashboardScreen() {
       <View style={styles.macroRow}>
         <MacroCard label="Proteini" current={consumed.p} goal={profile.macroGoals.protein} bg={colors.mint} />
         <MacroCard label="Ugljeni h." current={consumed.c} goal={profile.macroGoals.carbs} bg={colors.lav} />
-        <MacroCard label="Masti" current={consumed.f} goal={profile.macroGoals.fats} bg="#fff" />
+        <MacroCard label="Masti" current={consumed.f} goal={profile.macroGoals.fats} bg={colors.white} />
       </View>
 
       <View style={styles.sectionHeader}>
@@ -129,55 +132,56 @@ export function DashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingTop: 62, paddingHorizontal: 22, paddingBottom: 32 },
-  emptyScreen: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', padding: 30 },
-  emptyText: { fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)', textAlign: 'center' },
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
-  avatar: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 15, color: '#101012' },
-  greeting: { fontFamily: 'Poppins_500Medium', fontSize: 12, color: 'rgba(255,255,255,0.48)' },
-  name: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 19, color: '#fff', marginTop: 1 },
-  menuDots: { gap: 4 },
-  dot: { width: 22, height: 3, borderRadius: 2 },
-  ringCard: { borderRadius: 32, backgroundColor: '#17171A', borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', padding: 20, overflow: 'hidden' },
-  ringHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  ringTitle: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 16, color: '#fff' },
-  dayPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99, backgroundColor: 'rgba(143,233,206,0.13)' },
-  dayPillText: { fontFamily: 'Poppins_700Bold', fontSize: 11, color: colors.mint },
-  ringWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 4 },
-  consumedValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 50, color: '#fff' },
-  consumedSub: { fontFamily: 'Poppins_500Medium', fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 5 },
-  remainingPill: {
-    marginTop: 11,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 99,
-    backgroundColor: 'rgba(143,233,206,0.13)',
-  },
-  remainingText: { fontFamily: 'Poppins_700Bold', fontSize: 11, color: colors.mint },
-  macroRow: { flexDirection: 'row', gap: 9, marginTop: 12 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 28, marginBottom: 12 },
-  sectionTitle: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 18, color: '#fff' },
-  emptyMeals: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: 'rgba(255,255,255,0.4)' },
-  mealRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 12,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    backgroundColor: '#17171A',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-  },
-  mealIconWrap: { width: 38, height: 38, borderRadius: 13, backgroundColor: softGradientColors[0], alignItems: 'center', justifyContent: 'center' },
-  mealName: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: '#fff' },
-  mealMeta: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: 'rgba(255,255,255,0.4)', marginTop: 2 },
-  mealKcal: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 15, color: '#fff' },
-  mealKcalLabel: { fontFamily: 'Poppins_500Medium', fontSize: 9.5, letterSpacing: 1, color: 'rgba(255,255,255,0.32)' },
-});
+const makeStyles = (t: Theme) =>
+  StyleSheet.create({
+    screen: { flex: 1, backgroundColor: t.bg },
+    content: { paddingTop: 62, paddingHorizontal: 22, paddingBottom: 32 },
+    emptyScreen: { flex: 1, backgroundColor: t.bg, alignItems: 'center', justifyContent: 'center', padding: 30 },
+    emptyText: { fontFamily: 'Poppins_400Regular', color: t.ink(0.6), textAlign: 'center' },
+    headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
+    avatar: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
+    avatarText: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 15, color: '#101012' },
+    greeting: { fontFamily: 'Poppins_500Medium', fontSize: 12, color: t.ink(0.48) },
+    name: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 19, color: t.text, marginTop: 1 },
+    menuDots: { gap: 4 },
+    dot: { width: 22, height: 3, borderRadius: 2 },
+    ringCard: { borderRadius: 32, backgroundColor: t.surface, borderWidth: 1, borderColor: t.ink(0.07), padding: 20, overflow: 'hidden' },
+    ringHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+    ringTitle: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 16, color: t.text },
+    dayPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99, backgroundColor: 'rgba(143,233,206,0.13)' },
+    dayPillText: { fontFamily: 'Poppins_700Bold', fontSize: 11, color: colors.mint },
+    ringWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 4 },
+    consumedValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 50, color: t.text },
+    consumedSub: { fontFamily: 'Poppins_500Medium', fontSize: 12, color: t.ink(0.45), marginTop: 5 },
+    remainingPill: {
+      marginTop: 11,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 99,
+      backgroundColor: 'rgba(143,233,206,0.13)',
+    },
+    remainingText: { fontFamily: 'Poppins_700Bold', fontSize: 11, color: colors.mint },
+    macroRow: { flexDirection: 'row', gap: 9, marginTop: 12 },
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 28, marginBottom: 12 },
+    sectionTitle: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 18, color: t.text },
+    emptyMeals: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: t.ink(0.4) },
+    mealRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      padding: 12,
+      paddingHorizontal: 14,
+      borderRadius: 20,
+      backgroundColor: t.surface,
+      borderWidth: 1,
+      borderColor: t.ink(0.06),
+    },
+    mealIconWrap: { width: 38, height: 38, borderRadius: 13, backgroundColor: softGradientColors[0], alignItems: 'center', justifyContent: 'center' },
+    mealName: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: t.text },
+    mealMeta: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: t.ink(0.4), marginTop: 2 },
+    mealKcal: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 15, color: t.text },
+    mealKcalLabel: { fontFamily: 'Poppins_500Medium', fontSize: 9.5, letterSpacing: 1, color: t.ink(0.32) },
+  });

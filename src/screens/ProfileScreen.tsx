@@ -1,7 +1,9 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, gradientColors, gradientLocations, softGradientColors } from '../theme/colors';
+import { Theme, whiteChipEdge } from '../theme/theme';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { Icon } from '../components/Icon';
 import { GradientButton } from '../components/GradientButton';
 import { bmiLabel, calculateBMI, getActivityOption, goalLabel } from '../utils/calculations';
@@ -25,6 +27,7 @@ interface DetailRowProps {
 }
 
 function DetailRow({ icon, label, value, note, first }: DetailRowProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.row, first && styles.rowFirst]}>
       <View style={styles.rowIcon}>
@@ -39,12 +42,38 @@ function DetailRow({ icon, label, value, note, first }: DetailRowProps) {
   );
 }
 
+/** Switch on for the light theme; dark is the default. */
+function ThemeRow() {
+  const { theme, setMode } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const isLight = theme.mode === 'light';
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowIcon}>
+        <Icon name={isLight ? 'light_mode' : 'dark_mode'} size={18} color={colors.mint} />
+      </View>
+      <Text style={styles.rowLabel}>Tema</Text>
+      <Text style={styles.rowNote}>{isLight ? 'Svetla' : 'Tamna'}</Text>
+      <Switch
+        value={isLight}
+        onValueChange={on => setMode(on ? 'light' : 'dark')}
+        trackColor={{ false: theme.ink(0.16), true: colors.mint }}
+        thumbColor="#ffffff"
+        ios_backgroundColor={theme.ink(0.16)}
+        accessibilityLabel="Svetla tema"
+      />
+    </View>
+  );
+}
+
 interface ProfileScreenProps {
   profile: UserProfile;
   onEdit: () => void;
 }
 
 export function ProfileScreen({ profile, onEdit }: ProfileScreenProps) {
+  const { theme } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const activity = getActivityOption(profile.activity);
   const bmi = calculateBMI(profile.weightKg, profile.heightCm);
 
@@ -73,7 +102,7 @@ export function ProfileScreen({ profile, onEdit }: ProfileScreenProps) {
             <Text style={styles.macroValue}>{profile.macroGoals.carbs}g</Text>
             <Text style={styles.macroLabel}>Ugljeni h.</Text>
           </View>
-          <View style={[styles.macroBox, { backgroundColor: '#fff' }]}>
+          <View style={[styles.macroBox, { backgroundColor: colors.white }, whiteChipEdge(theme)]}>
             <Text style={styles.macroValue}>{profile.macroGoals.fats}g</Text>
             <Text style={styles.macroLabel}>Masti</Text>
           </View>
@@ -96,6 +125,7 @@ export function ProfileScreen({ profile, onEdit }: ProfileScreenProps) {
         <DetailRow icon="monitor_heart" label="BMI" value={bmi.toFixed(1)} note={bmiLabel(bmi)} />
         <DetailRow icon="local_fire_department" label="BMR" value={profile.bmr.toLocaleString('sr-RS')} note="kcal" />
         <DetailRow icon="bolt" label="TDEE" value={profile.tdee.toLocaleString('sr-RS')} note="kcal" />
+        <ThemeRow />
       </View>
 
       <GradientButton label="Izmeni podatke" onPress={onEdit} style={styles.editBtn} />
@@ -104,59 +134,60 @@ export function ProfileScreen({ profile, onEdit }: ProfileScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingTop: 62, paddingHorizontal: 22, paddingBottom: 32 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 22 },
-  avatar: { width: 58, height: 58, borderRadius: 29, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 18, color: '#101012' },
-  name: { fontFamily: 'Poppins_900Black_Italic', fontSize: 24, color: '#fff', letterSpacing: -0.3 },
-  subtitle: { fontFamily: 'Poppins_500Medium', fontSize: 12.5, color: 'rgba(255,255,255,0.45)', marginTop: 2 },
-  goalCard: {
-    borderRadius: 32,
-    backgroundColor: '#17171A',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    padding: 20,
-    alignItems: 'center',
-  },
-  goalBadge: { fontFamily: 'Poppins_600SemiBold', fontSize: 10.5, letterSpacing: 2, color: colors.mint },
-  goalValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 52, color: '#fff', marginTop: 8, letterSpacing: -1 },
-  goalSub: { fontFamily: 'Poppins_500Medium', fontSize: 12.5, color: 'rgba(255,255,255,0.45)', marginTop: 2 },
-  macroRow: { flexDirection: 'row', gap: 8, marginTop: 20, alignSelf: 'stretch' },
-  macroBox: { flex: 1, paddingVertical: 12, borderRadius: 18, alignItems: 'center' },
-  macroValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 18, color: '#101012' },
-  macroLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 10, color: '#101012', opacity: 0.68, marginTop: 3 },
-  sectionTitle: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 16, color: '#fff', marginTop: 26, marginBottom: 11 },
-  card: { borderRadius: 26, backgroundColor: '#17171A', borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', paddingHorizontal: 16 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
-  },
-  rowFirst: { borderTopWidth: 0 },
-  rowIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    backgroundColor: softGradientColors[0],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rowLabel: { flex: 1, fontFamily: 'Poppins_500Medium', fontSize: 13, color: 'rgba(255,255,255,0.6)' },
-  rowValueWrap: { flexDirection: 'row', alignItems: 'baseline', gap: 5 },
-  rowValue: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 16, color: '#fff' },
-  rowNote: { fontFamily: 'Poppins_500Medium', fontSize: 11.5, color: 'rgba(255,255,255,0.4)' },
-  editBtn: { marginTop: 26 },
-  editHint: {
-    fontFamily: 'Poppins_400Regular',
-    fontSize: 11.5,
-    lineHeight: 17,
-    color: 'rgba(255,255,255,0.35)',
-    textAlign: 'center',
-    marginTop: 12,
-  },
-});
+const makeStyles = (t: Theme) =>
+  StyleSheet.create({
+    screen: { flex: 1, backgroundColor: t.bg },
+    content: { paddingTop: 62, paddingHorizontal: 22, paddingBottom: 32 },
+    headerRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 22 },
+    avatar: { width: 58, height: 58, borderRadius: 29, alignItems: 'center', justifyContent: 'center' },
+    avatarText: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 18, color: '#101012' },
+    name: { fontFamily: 'Poppins_900Black_Italic', fontSize: 24, color: t.text, letterSpacing: -0.3 },
+    subtitle: { fontFamily: 'Poppins_500Medium', fontSize: 12.5, color: t.ink(0.45), marginTop: 2 },
+    goalCard: {
+      borderRadius: 32,
+      backgroundColor: t.surface,
+      borderWidth: 1,
+      borderColor: t.ink(0.07),
+      padding: 20,
+      alignItems: 'center',
+    },
+    goalBadge: { fontFamily: 'Poppins_600SemiBold', fontSize: 10.5, letterSpacing: 2, color: colors.mint },
+    goalValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 52, color: t.text, marginTop: 8, letterSpacing: -1 },
+    goalSub: { fontFamily: 'Poppins_500Medium', fontSize: 12.5, color: t.ink(0.45), marginTop: 2 },
+    macroRow: { flexDirection: 'row', gap: 8, marginTop: 20, alignSelf: 'stretch' },
+    macroBox: { flex: 1, paddingVertical: 12, borderRadius: 18, alignItems: 'center' },
+    macroValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 18, color: '#101012' },
+    macroLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 10, color: '#101012', opacity: 0.68, marginTop: 3 },
+    sectionTitle: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 16, color: t.text, marginTop: 26, marginBottom: 11 },
+    card: { borderRadius: 26, backgroundColor: t.surface, borderWidth: 1, borderColor: t.ink(0.07), paddingHorizontal: 16 },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingVertical: 14,
+      borderTopWidth: 1,
+      borderTopColor: t.ink(0.06),
+    },
+    rowFirst: { borderTopWidth: 0 },
+    rowIcon: {
+      width: 34,
+      height: 34,
+      borderRadius: 12,
+      backgroundColor: softGradientColors[0],
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    rowLabel: { flex: 1, fontFamily: 'Poppins_500Medium', fontSize: 13, color: t.ink(0.6) },
+    rowValueWrap: { flexDirection: 'row', alignItems: 'baseline', gap: 5 },
+    rowValue: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 16, color: t.text },
+    rowNote: { fontFamily: 'Poppins_500Medium', fontSize: 11.5, color: t.ink(0.4) },
+    editBtn: { marginTop: 26 },
+    editHint: {
+      fontFamily: 'Poppins_400Regular',
+      fontSize: 11.5,
+      lineHeight: 17,
+      color: t.ink(0.35),
+      textAlign: 'center',
+      marginTop: 12,
+    },
+  });

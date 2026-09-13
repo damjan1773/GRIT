@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { colors, gradientColors, gradientLocations, softGradientColors } from '../theme/colors';
+import { colors, gradientColors, gradientLocations } from '../theme/colors';
+import { Theme, whiteChipEdge } from '../theme/theme';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { Icon } from '../components/Icon';
 import { StepperButton } from '../components/Stepper';
 import { GradientButton } from '../components/GradientButton';
@@ -40,6 +42,8 @@ interface OnboardingScreenProps {
 export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenProps = {}) {
   const navigation = useNavigation<any>();
   const { setProfile } = useAppData();
+  const { theme } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const isEditing = !!initialProfile;
 
   const [step, setStep] = useState(0);
@@ -56,7 +60,6 @@ export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenPro
   const tdee = useMemo(() => calculateTDEE(bmr, activity), [bmr, activity]);
   const target = tdee + adjustment;
   const macros = useMemo(() => calculateMacroGoals(target), [target]);
-  const activityOption = ACTIVITY_LEVELS.find(a => a.id === activity)!;
 
   function next() {
     if (step >= SUMMARY_STEP) {
@@ -91,7 +94,7 @@ export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenPro
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <Pressable onPress={back} style={styles.backBtn}>
-            <Icon name="arrow_back" size={20} color="#fff" />
+            <Icon name="arrow_back" size={20} color={theme.text} />
           </Pressable>
           <Text style={styles.stepLabel}>{STEP_LABELS[step]}</Text>
           <Text style={styles.stepCount}>{`${Math.min(step + 1, INPUT_STEPS)}/${INPUT_STEPS}`}</Text>
@@ -115,7 +118,7 @@ export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenPro
               value={name}
               onChangeText={setName}
               placeholder="Kako da te zovemo?"
-              placeholderTextColor="rgba(255,255,255,0.3)"
+              placeholderTextColor={theme.ink(0.3)}
               style={styles.nameInput}
               maxLength={40}
               autoCapitalize="words"
@@ -135,8 +138,8 @@ export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenPro
                       </LinearGradient>
                     ) : (
                       <View style={[styles.sexOption, styles.sexOptionInactive]}>
-                        <Icon name={icon} size={26} color="#fff" />
-                        <Text style={[styles.sexLabel, { color: '#fff' }]}>{label}</Text>
+                        <Icon name={icon} size={26} color={theme.text} />
+                        <Text style={[styles.sexLabel, { color: theme.text }]}>{label}</Text>
                       </View>
                     )}
                   </Pressable>
@@ -185,7 +188,7 @@ export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenPro
               <View style={styles.bmiCard}>
                 <Icon name="monitor_heart" size={20} color={colors.mint} />
                 <Text style={styles.bmiText}>
-                  BMI <Text style={{ color: '#fff', fontFamily: 'Poppins_700Bold' }}>{bmi.toFixed(1)}</Text> — {bmiLabel(bmi)}
+                  BMI <Text style={{ color: theme.text, fontFamily: 'Poppins_700Bold' }}>{bmi.toFixed(1)}</Text> — {bmiLabel(bmi)}
                 </Text>
               </View>
             </View>
@@ -212,10 +215,10 @@ export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenPro
                     ) : (
                       <View style={[styles.actOption, styles.actOptionInactive]}>
                         <View style={{ flex: 1 }}>
-                          <Text style={[styles.actName, { color: '#fff' }]}>{opt.name}</Text>
-                          <Text style={[styles.actSub, { color: 'rgba(255,255,255,0.42)' }]}>{opt.subtitle}</Text>
+                          <Text style={[styles.actName, { color: theme.text }]}>{opt.name}</Text>
+                          <Text style={[styles.actSub, { color: theme.ink(0.42) }]}>{opt.subtitle}</Text>
                         </View>
-                        <Text style={[styles.actMult, { color: '#fff' }]}>×{opt.multiplier}</Text>
+                        <Text style={[styles.actMult, { color: theme.text }]}>×{opt.multiplier}</Text>
                       </View>
                     )}
                   </Pressable>
@@ -235,7 +238,7 @@ export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenPro
               <Text style={styles.fieldLabel}>DNEVNA RAZLIKA</Text>
               <View style={styles.goalValueRow}>
                 <Text
-                  style={[styles.goalValue, { color: adjustment < 0 ? colors.lav : adjustment > 0 ? colors.mint : '#fff' }]}
+                  style={[styles.goalValue, { color: adjustment < 0 ? colors.lav : adjustment > 0 ? colors.mint : theme.text }]}
                 >
                   {formatSigned(adjustment)}
                 </Text>
@@ -306,7 +309,7 @@ export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenPro
                 <Text style={styles.macroValue}>{macros.carbs}g</Text>
                 <Text style={styles.macroLabel}>Ugljeni h.</Text>
               </View>
-              <View style={[styles.macroBox, { backgroundColor: '#fff' }]}>
+              <View style={[styles.macroBox, { backgroundColor: colors.white }, whiteChipEdge(theme)]}>
                 <Text style={styles.macroValue}>{macros.fats}g</Text>
                 <Text style={styles.macroLabel}>Masti</Text>
               </View>
@@ -326,132 +329,122 @@ export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenPro
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
-  header: { paddingTop: 62, paddingHorizontal: 26 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 10.5, letterSpacing: 2, color: 'rgba(255,255,255,0.42)' },
-  stepCount: { fontFamily: 'Poppins_700Bold', fontSize: 12, color: colors.mint, minWidth: 40, textAlign: 'right' },
-  segRow: { flexDirection: 'row', gap: 7 },
-  segTrack: { flex: 1, height: 5, borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.09)', overflow: 'hidden' },
-  segFill: { height: '100%', borderRadius: 99, backgroundColor: colors.mint },
-  body: { flex: 1, paddingHorizontal: 26, paddingTop: 26 },
-  h2: { fontFamily: 'Poppins_900Black_Italic', fontSize: 34, color: '#fff', letterSpacing: -0.3 },
-  sub: { fontFamily: 'Poppins_400Regular', fontSize: 13.5, lineHeight: 21, color: 'rgba(255,255,255,0.5)', marginTop: 10, marginBottom: 26 },
-  fieldLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 11, letterSpacing: 2, color: 'rgba(255,255,255,0.38)', marginBottom: 11 },
-  nameInput: {
-    backgroundColor: '#17171A',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    borderRadius: 24,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    marginBottom: 26,
-    color: '#fff',
-    fontFamily: 'Poppins_600SemiBold',
-    fontSize: 16,
-  },
-  sexRow: { flexDirection: 'row', gap: 11, marginBottom: 26 },
-  sexOptionWrap: { flex: 1 },
-  sexOption: { padding: 20, borderRadius: 24, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.09)' },
-  sexOptionInactive: { backgroundColor: '#17171A' },
-  sexLabel: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 17, marginTop: 9 },
-  counterCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderRadius: 24,
-    backgroundColor: '#17171A',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-  },
-  counterValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 42, color: '#fff' },
-  counterUnit: { fontFamily: 'Poppins_500Medium', fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 3 },
-  measureCard: { padding: 18, borderRadius: 26, backgroundColor: '#17171A', borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)' },
-  counterRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
-  measureValueRow: { flexDirection: 'row', alignItems: 'baseline' },
-  measureValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 40 },
-  measureUnit: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 15, color: 'rgba(255,255,255,0.45)', marginLeft: 5 },
-  bmiCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    padding: 14,
-    borderRadius: 22,
-    backgroundColor: 'rgba(143,233,206,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(143,233,206,0.18)',
-  },
-  bmiText: { fontFamily: 'Poppins_500Medium', fontSize: 12.5, color: 'rgba(255,255,255,0.72)', flex: 1 },
-  actOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 15,
-    borderRadius: 22,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  actOptionInactive: { backgroundColor: '#17171A' },
-  actName: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 15 },
-  actSub: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, marginTop: 2 },
-  actMult: { fontFamily: 'Poppins_700Bold', fontSize: 11, opacity: 0.72 },
-  badge: { paddingHorizontal: 13, paddingVertical: 6, borderRadius: 99 },
-  badgeText: { fontFamily: 'Poppins_600SemiBold', fontSize: 10.5, letterSpacing: 2, color: '#101012' },
-  targetValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 72, color: colors.mint, marginTop: 20 },
-  targetSub: { fontFamily: 'Poppins_500Medium', fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 6 },
-  macroRow: { flexDirection: 'row', gap: 8, marginTop: 26, alignSelf: 'stretch' },
-  macroBox: { flex: 1, paddingVertical: 14, paddingHorizontal: 10, borderRadius: 20, alignItems: 'center' },
-  macroValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 21, color: '#101012' },
-  macroLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 10.5, color: '#101012', opacity: 0.68, marginTop: 4 },
-  calcCard: {
-    marginTop: 16,
-    padding: 15,
-    borderRadius: 22,
-    backgroundColor: '#17171A',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    alignSelf: 'stretch',
-  },
-  calcTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: '#fff', marginBottom: 6 },
-  calcDesc: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, lineHeight: 18, color: 'rgba(255,255,255,0.45)' },
-  goalCard: {
-    padding: 18,
-    borderRadius: 26,
-    backgroundColor: '#17171A',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-  },
-  goalValueRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', marginTop: 4 },
-  goalValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 48, letterSpacing: -1 },
-  goalName: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: 'rgba(255,255,255,0.55)', textAlign: 'center', marginTop: 2 },
-  slider: { width: '100%', height: 40, marginTop: 14 },
-  sliderEnds: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 },
-  sliderEnd: { fontFamily: 'Poppins_600SemiBold', fontSize: 10, letterSpacing: 1, color: 'rgba(255,255,255,0.38)' },
-  estimateCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 12,
-    padding: 14,
-    borderRadius: 22,
-    backgroundColor: 'rgba(143,233,206,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(143,233,206,0.18)',
-  },
-  estimateText: { flex: 1, fontFamily: 'Poppins_500Medium', fontSize: 13, color: 'rgba(255,255,255,0.72)' },
-  estimateStrong: { fontFamily: 'Poppins_700Bold', color: '#fff' },
-  estimateNote: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, lineHeight: 17, color: 'rgba(255,255,255,0.4)', marginTop: 10 },
-  lowWarning: { fontFamily: 'Poppins_500Medium', fontSize: 12, lineHeight: 18, color: '#FF6B6B', marginTop: 10 },
-  footer: { padding: 26, paddingBottom: 34 },
-});
+const makeStyles = (t: Theme) =>
+  StyleSheet.create({
+    screen: { flex: 1, backgroundColor: t.bg },
+    header: { paddingTop: 62, paddingHorizontal: 26 },
+    headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+    backBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: t.ink(0.12),
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    stepLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 10.5, letterSpacing: 2, color: t.ink(0.42) },
+    stepCount: { fontFamily: 'Poppins_700Bold', fontSize: 12, color: colors.mint, minWidth: 40, textAlign: 'right' },
+    segRow: { flexDirection: 'row', gap: 7 },
+    segTrack: { flex: 1, height: 5, borderRadius: 99, backgroundColor: t.ink(0.09), overflow: 'hidden' },
+    segFill: { height: '100%', borderRadius: 99, backgroundColor: colors.mint },
+    body: { flex: 1, paddingHorizontal: 26, paddingTop: 26 },
+    h2: { fontFamily: 'Poppins_900Black_Italic', fontSize: 34, color: t.text, letterSpacing: -0.3 },
+    sub: { fontFamily: 'Poppins_400Regular', fontSize: 13.5, lineHeight: 21, color: t.ink(0.5), marginTop: 10, marginBottom: 26 },
+    fieldLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 11, letterSpacing: 2, color: t.ink(0.38), marginBottom: 11 },
+    nameInput: {
+      backgroundColor: t.surface,
+      borderWidth: 1,
+      borderColor: t.ink(0.07),
+      borderRadius: 24,
+      paddingHorizontal: 18,
+      paddingVertical: 16,
+      marginBottom: 26,
+      color: t.text,
+      fontFamily: 'Poppins_600SemiBold',
+      fontSize: 16,
+    },
+    sexRow: { flexDirection: 'row', gap: 11, marginBottom: 26 },
+    sexOptionWrap: { flex: 1 },
+    sexOption: { padding: 20, borderRadius: 24, borderWidth: 1.5, borderColor: t.ink(0.09) },
+    sexOptionInactive: { backgroundColor: t.surface },
+    sexLabel: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 17, marginTop: 9 },
+    counterCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: 16,
+      borderRadius: 24,
+      backgroundColor: t.surface,
+      borderWidth: 1,
+      borderColor: t.ink(0.07),
+    },
+    counterValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 42, color: t.text },
+    counterUnit: { fontFamily: 'Poppins_500Medium', fontSize: 11, color: t.ink(0.4), marginTop: 3 },
+    measureCard: { padding: 18, borderRadius: 26, backgroundColor: t.surface, borderWidth: 1, borderColor: t.ink(0.07) },
+    counterRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
+    measureValueRow: { flexDirection: 'row', alignItems: 'baseline' },
+    measureValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 40 },
+    measureUnit: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 15, color: t.ink(0.45), marginLeft: 5 },
+    bmiCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      padding: 14,
+      borderRadius: 22,
+      backgroundColor: 'rgba(143,233,206,0.12)',
+      borderWidth: 1,
+      borderColor: 'rgba(143,233,206,0.18)',
+    },
+    bmiText: { fontFamily: 'Poppins_500Medium', fontSize: 12.5, color: t.ink(0.72), flex: 1 },
+    actOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      padding: 15,
+      borderRadius: 22,
+      borderWidth: 1.5,
+      borderColor: t.ink(0.08),
+    },
+    actOptionInactive: { backgroundColor: t.surface },
+    actName: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 15 },
+    actSub: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, marginTop: 2 },
+    actMult: { fontFamily: 'Poppins_700Bold', fontSize: 11, opacity: 0.72 },
+    badge: { paddingHorizontal: 13, paddingVertical: 6, borderRadius: 99 },
+    badgeText: { fontFamily: 'Poppins_600SemiBold', fontSize: 10.5, letterSpacing: 2, color: '#101012' },
+    targetValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 72, color: colors.mint, marginTop: 20 },
+    targetSub: { fontFamily: 'Poppins_500Medium', fontSize: 13, color: t.ink(0.5), marginTop: 6 },
+    macroRow: { flexDirection: 'row', gap: 8, marginTop: 26, alignSelf: 'stretch' },
+    macroBox: { flex: 1, paddingVertical: 14, paddingHorizontal: 10, borderRadius: 20, alignItems: 'center' },
+    macroValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 21, color: '#101012' },
+    macroLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 10.5, color: '#101012', opacity: 0.68, marginTop: 4 },
+    goalCard: {
+      padding: 18,
+      borderRadius: 26,
+      backgroundColor: t.surface,
+      borderWidth: 1,
+      borderColor: t.ink(0.07),
+    },
+    goalValueRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', marginTop: 4 },
+    goalValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 48, letterSpacing: -1 },
+    goalName: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: t.ink(0.55), textAlign: 'center', marginTop: 2 },
+    slider: { width: '100%', height: 40, marginTop: 14 },
+    sliderEnds: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 },
+    sliderEnd: { fontFamily: 'Poppins_600SemiBold', fontSize: 10, letterSpacing: 1, color: t.ink(0.38) },
+    estimateCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      marginTop: 12,
+      padding: 14,
+      borderRadius: 22,
+      backgroundColor: 'rgba(143,233,206,0.12)',
+      borderWidth: 1,
+      borderColor: 'rgba(143,233,206,0.18)',
+    },
+    estimateText: { flex: 1, fontFamily: 'Poppins_500Medium', fontSize: 13, color: t.ink(0.72) },
+    estimateStrong: { fontFamily: 'Poppins_700Bold', color: t.text },
+    estimateNote: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, lineHeight: 17, color: t.ink(0.4), marginTop: 10 },
+    lowWarning: { fontFamily: 'Poppins_500Medium', fontSize: 12, lineHeight: 18, color: '#FF6B6B', marginTop: 10 },
+    footer: { padding: 26, paddingBottom: 34 },
+  });

@@ -1,18 +1,13 @@
+/**
+ * Accents shared by both themes. What flips between dark and light — page,
+ * cards, text — is in theme.ts.
+ */
 export const colors = {
   mint: '#8FE9CE',
   lav: '#C5BEF5',
   mid: '#B7DCEC',
-  bg: '#0a0a0b',
-  card: '#17171A',
-  cardBorder: 'rgba(255,255,255,0.07)',
-  cardBorderStrong: 'rgba(255,255,255,0.14)',
+  /** The white macro chip — an accent, so it stays white in the light theme too. */
   white: '#ffffff',
-  textDim: 'rgba(255,255,255,0.5)',
-  textFaint: 'rgba(255,255,255,0.38)',
-  textFainter: 'rgba(255,255,255,0.42)',
-  navIconDark: '#101012',
-  mintSoftBg: 'rgba(143,233,206,0.13)',
-  gradSoft: 'rgba(143,233,206,0.20)',
 };
 
 // Approximates the design's 115deg linear-gradient(mint, mid 48%, lav)
