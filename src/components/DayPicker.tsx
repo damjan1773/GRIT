@@ -5,7 +5,7 @@ import { colors, gradientColors, gradientLocations } from '../theme/colors';
 import { dayOfMonth, shiftDateKey, weekdayShort } from '../utils/dates';
 
 const DAYS_EACH_WAY = 7;
-const CHIP_WIDTH = 52;
+const CHIP_WIDTH = 68;
 const CHIP_GAP = 8;
 /** Matches the dashboard's side padding, so the strip can scroll edge to edge. */
 const EDGE_PADDING = 22;
@@ -19,13 +19,21 @@ interface DayPickerProps {
 /** Horizontal strip of today and a week either side. */
 export function DayPicker({ todayKey, selectedDateKey, onSelect }: DayPickerProps) {
   const scrollRef = useRef<ScrollView>(null);
+  const viewportWidth = useRef(0);
+  const contentWidth = useRef(0);
+  const centred = useRef(false);
   const days = Array.from({ length: DAYS_EACH_WAY * 2 + 1 }, (_, i) => shiftDateKey(todayKey, i - DAYS_EACH_WAY));
 
   // Open with the selected day in the middle rather than scrolled to a week ago.
-  function centreSelected(e: LayoutChangeEvent) {
+  // Both widths have to be known first — scrolling before the content is measured
+  // gets clamped to 0 — and it happens once, so picking a day doesn't jump.
+  function centreSelectedOnce() {
+    if (centred.current || !viewportWidth.current || !contentWidth.current) return;
+    centred.current = true;
     const index = Math.max(0, days.indexOf(selectedDateKey));
-    const x = EDGE_PADDING + index * (CHIP_WIDTH + CHIP_GAP) - (e.nativeEvent.layout.width - CHIP_WIDTH) / 2;
-    scrollRef.current?.scrollTo({ x: Math.max(0, x), animated: false });
+    const x = EDGE_PADDING + index * (CHIP_WIDTH + CHIP_GAP) - (viewportWidth.current - CHIP_WIDTH) / 2;
+    const maxX = Math.max(0, contentWidth.current - viewportWidth.current);
+    scrollRef.current?.scrollTo({ x: Math.min(maxX, Math.max(0, x)), animated: false });
   }
 
   return (
@@ -33,7 +41,14 @@ export function DayPicker({ todayKey, selectedDateKey, onSelect }: DayPickerProp
       ref={scrollRef}
       horizontal
       showsHorizontalScrollIndicator={false}
-      onLayout={centreSelected}
+      onLayout={(e: LayoutChangeEvent) => {
+        viewportWidth.current = e.nativeEvent.layout.width;
+        centreSelectedOnce();
+      }}
+      onContentSizeChange={width => {
+        contentWidth.current = width;
+        centreSelectedOnce();
+      }}
       style={styles.strip}
       contentContainerStyle={styles.content}
     >
