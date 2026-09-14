@@ -1,11 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Meal, UserProfile } from '../types';
+import { Meal, UserProfile, Workout } from '../types';
 import { ThemeMode } from '../theme/theme';
 
 const KEYS = {
   profile: 'nutra:profile',
   meals: 'nutra:meals',
   theme: 'nutra:theme',
+  workouts: 'nutra:workouts',
 };
 
 export async function loadThemeMode(): Promise<ThemeMode | null> {
@@ -60,8 +61,29 @@ export async function deleteMeal(id: string): Promise<Meal[]> {
 }
 
 /** Unique across app restarts, unlike a plain in-memory counter. */
-export function createMealId(): string {
+export function createId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/** Only workouts the user made; the built-in ones ship with the app. */
+export async function loadWorkouts(): Promise<Workout[]> {
+  const raw = await AsyncStorage.getItem(KEYS.workouts);
+  return raw ? (JSON.parse(raw) as Workout[]) : [];
+}
+
+/** Adds a new workout at the top, or replaces an existing one in place. */
+export async function saveWorkout(workout: Workout): Promise<Workout[]> {
+  const workouts = await loadWorkouts();
+  const exists = workouts.some(w => w.id === workout.id);
+  const updated = exists ? workouts.map(w => (w.id === workout.id ? workout : w)) : [workout, ...workouts];
+  await AsyncStorage.setItem(KEYS.workouts, JSON.stringify(updated));
+  return updated;
+}
+
+export async function deleteWorkout(id: string): Promise<Workout[]> {
+  const updated = (await loadWorkouts()).filter(w => w.id !== id);
+  await AsyncStorage.setItem(KEYS.workouts, JSON.stringify(updated));
+  return updated;
 }
 
 export async function loadMealsForDate(dateKey: string): Promise<Meal[]> {
@@ -70,5 +92,5 @@ export async function loadMealsForDate(dateKey: string): Promise<Meal[]> {
 }
 
 export async function clearAll(): Promise<void> {
-  await AsyncStorage.multiRemove([KEYS.profile, KEYS.meals]);
+  await AsyncStorage.multiRemove([KEYS.profile, KEYS.meals, KEYS.workouts]);
 }

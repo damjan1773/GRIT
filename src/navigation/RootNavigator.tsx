@@ -5,6 +5,7 @@ import { ProfileTabScreen } from '../screens/ProfileTabScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { MealEntryScreen } from '../screens/MealEntryScreen';
 import { ComingSoonScreen } from '../screens/ComingSoonScreen';
+import { TrainingScreen } from '../screens/TrainingScreen';
 import { BottomNav } from '../components/BottomNav';
 import { useAppData } from '../context/AppDataContext';
 import { useTheme } from '../theme/ThemeContext';
@@ -26,7 +27,7 @@ export function RootNavigator() {
         <Tab.Screen name="Dashboard" component={DashboardScreen} />
         <Tab.Screen name="MealEntry" component={MealEntryScreen} />
         <Tab.Screen name="Stats">{() => <ComingSoonScreen label="Statistika" icon="bar_chart" />}</Tab.Screen>
-        <Tab.Screen name="Settings">{() => <ComingSoonScreen label="Podešavanja" icon="settings" />}</Tab.Screen>
+        <Tab.Screen name="Training" component={TrainingScreen} />
       </Tab.Navigator>
     </View>
   );

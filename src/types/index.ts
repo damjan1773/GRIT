@@ -35,6 +35,29 @@ export interface MealMacros {
   fats: number;
 }
 
+/** Most exercises count repetitions; holds such as a plank are timed in seconds. */
+export type ExerciseUnit = 'reps' | 'sec';
+
+export interface Exercise {
+  id: string;
+  name: string;
+  sets: number;
+  /** Repetitions per set, or seconds per set when unit is 'sec'. */
+  reps: number;
+  unit: ExerciseUnit;
+}
+
+export interface Workout {
+  id: string;
+  name: string;
+  /** Short category shown on the card, e.g. "Snaga". */
+  tag: string;
+  exercises: Exercise[];
+  /** Ships with the app and can't be edited — only copied into a workout of your own. */
+  builtIn: boolean;
+  updatedAt: number;
+}
+
 export interface Meal extends MealMacros {
   id: string;
   name: string;

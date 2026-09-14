@@ -1,12 +1,15 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
-import { Meal, UserProfile } from '../types';
+import { Meal, UserProfile, Workout } from '../types';
 import {
   addMeal as addMealToStorage,
   deleteMeal as deleteMealFromStorage,
+  deleteWorkout as deleteWorkoutFromStorage,
   loadMeals,
   loadProfile,
+  loadWorkouts,
   saveProfile,
+  saveWorkout as saveWorkoutToStorage,
 } from '../services/storage';
 import { toDateKey } from '../utils/dates';
 
@@ -28,6 +31,10 @@ interface AppDataContextValue {
   setProfile: (profile: UserProfile) => Promise<void>;
   addMeal: (meal: Meal) => Promise<void>;
   deleteMeal: (id: string) => Promise<void>;
+  /** Workouts the user made; built-in ones are in data/builtInWorkouts. */
+  workouts: Workout[];
+  saveWorkout: (workout: Workout) => Promise<void>;
+  deleteWorkout: (id: string) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
@@ -35,6 +42,7 @@ const AppDataContext = createContext<AppDataContextValue | null>(null);
 export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfileState] = useState<UserProfile | null>(null);
   const [meals, setMeals] = useState<Meal[]>([]);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const [todayKey, setTodayKey] = useState(() => toDateKey(new Date()));
   const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
@@ -43,9 +51,10 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      const [p, m] = await Promise.all([loadProfile(), loadMeals()]);
+      const [p, m, w] = await Promise.all([loadProfile(), loadMeals(), loadWorkouts()]);
       setProfileState(p);
       setMeals(m);
+      setWorkouts(w);
       setLoading(false);
     })();
   }, []);
@@ -97,6 +106,16 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     setMeals(updated);
   }, []);
 
+  const saveWorkout = useCallback(async (workout: Workout) => {
+    const updated = await saveWorkoutToStorage(workout);
+    setWorkouts(updated);
+  }, []);
+
+  const deleteWorkout = useCallback(async (id: string) => {
+    const updated = await deleteWorkoutFromStorage(id);
+    setWorkouts(updated);
+  }, []);
+
   const dayMeals = useMemo(() => meals.filter(m => m.dateKey === selectedDateKey), [meals, selectedDateKey]);
 
   const value = useMemo(
@@ -110,8 +129,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       setProfile,
       addMeal,
       deleteMeal,
+      workouts,
+      saveWorkout,
+      deleteWorkout,
     }),
-    [profile, todayKey, selectedDateKey, dayMeals, loading, setProfile, addMeal, deleteMeal]
+    [profile, todayKey, selectedDateKey, dayMeals, loading, setProfile, addMeal, deleteMeal, workouts, saveWorkout, deleteWorkout]
   );
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;

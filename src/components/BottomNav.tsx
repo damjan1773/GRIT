@@ -12,7 +12,7 @@ const TAB_ICON: Record<string, string> = {
   Dashboard: 'restaurant_menu',
   MealEntry: 'add',
   Stats: 'bar_chart',
-  Settings: 'settings',
+  Training: 'fitness_center',
 };
 
 export function BottomNav({ state, navigation }: BottomTabBarProps) {

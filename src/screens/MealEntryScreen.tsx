@@ -9,7 +9,7 @@ import { Icon } from '../components/Icon';
 import { parseMealFromText } from '../services/mealParser';
 import { MealParseItem } from '../services/mealParser.types';
 import { useAppData } from '../context/AppDataContext';
-import { createMealId } from '../services/storage';
+import { createId } from '../services/storage';
 import { forDay } from '../utils/dates';
 
 type ChatMessage =
@@ -102,7 +102,7 @@ export function MealEntryScreen() {
     if (!message || message.kind !== 'card') return;
     const totals = cardTotals(message.items);
     const meal = {
-      id: createMealId(),
+      id: createId(),
       name: message.items.map(it => it.name).join(' + '),
       calories: totals.calories,
       protein: totals.protein,
