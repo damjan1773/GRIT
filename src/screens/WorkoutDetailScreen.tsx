@@ -17,9 +17,19 @@ interface WorkoutDetailScreenProps {
   /** Edits a saved workout, or starts a copy of a built-in one. */
   onCustomize: () => void;
   onDelete: () => void;
+  onStart: () => void;
+  /** True while some workout is already running — the button resumes it instead. */
+  sessionRunning: boolean;
 }
 
-export function WorkoutDetailScreen({ workout, onBack, onCustomize, onDelete }: WorkoutDetailScreenProps) {
+export function WorkoutDetailScreen({
+  workout,
+  onBack,
+  onCustomize,
+  onDelete,
+  onStart,
+  sessionRunning,
+}: WorkoutDetailScreenProps) {
   const { theme } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -73,14 +83,21 @@ export function WorkoutDetailScreen({ workout, onBack, onCustomize, onDelete }: 
         ))}
       </View>
 
+      <GradientButton
+        label={sessionRunning ? 'Nastavi trening u toku' : 'Započni trening'}
+        onPress={onStart}
+        style={styles.primaryBtn}
+      />
+
+      <Pressable onPress={onCustomize} style={styles.secondaryBtn} accessibilityRole="button">
+        <Icon name={workout.builtIn ? 'content_copy' : 'edit'} size={16} color={theme.text} />
+        <Text style={styles.secondaryText}>{workout.builtIn ? 'Prilagodi kao svoj' : 'Izmeni trening'}</Text>
+      </Pressable>
+
       {workout.builtIn ? (
-        <>
-          <GradientButton label="Prilagodi kao svoj" onPress={onCustomize} style={styles.primaryBtn} />
-          <Text style={styles.hint}>Napravićemo tvoju kopiju u kojoj možeš da menjaš vežbe, serije i ponavljanja.</Text>
-        </>
+        <Text style={styles.hint}>Napravićemo tvoju kopiju u kojoj možeš da menjaš vežbe, serije i ponavljanja.</Text>
       ) : (
         <>
-          <GradientButton label="Izmeni trening" onPress={onCustomize} style={styles.primaryBtn} />
           <Pressable
             onPress={() => (confirmingDelete ? onDelete() : setConfirmingDelete(true))}
             style={[styles.deleteBtn, confirmingDelete && styles.deleteBtnArmed]}
@@ -139,6 +156,18 @@ const makeStyles = (t: Theme) =>
     exName: { flex: 1, fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: t.text },
     exPrescription: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 14, color: t.text },
     primaryBtn: { marginTop: 26 },
+    secondaryBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      marginTop: 12,
+      height: 48,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: t.ink(0.14),
+    },
+    secondaryText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: t.text },
     hint: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, lineHeight: 17, color: t.ink(0.4), textAlign: 'center', marginTop: 12 },
     deleteBtn: {
       flexDirection: 'row',

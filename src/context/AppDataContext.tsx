@@ -1,16 +1,22 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
-import { Meal, UserProfile, Workout } from '../types';
+import { Meal, UserProfile, Workout, WorkoutSession } from '../types';
 import {
   addMeal as addMealToStorage,
+  appendSession,
+  createId,
   deleteMeal as deleteMealFromStorage,
   deleteWorkout as deleteWorkoutFromStorage,
+  loadActiveSession,
   loadMeals,
   loadProfile,
+  loadSessions,
   loadWorkouts,
+  saveActiveSession,
   saveProfile,
   saveWorkout as saveWorkoutToStorage,
 } from '../services/storage';
+import { completedSets } from '../utils/workouts';
 import { toDateKey } from '../utils/dates';
 
 /** How often a running app looks for the date having turned over. */
@@ -35,6 +41,14 @@ interface AppDataContextValue {
   workouts: Workout[];
   saveWorkout: (workout: Workout) => Promise<void>;
   deleteWorkout: (id: string) => Promise<void>;
+  /** Finished sessions, newest first — where the "last time" numbers come from. */
+  sessions: WorkoutSession[];
+  /** The workout being done right now, restored if the app was closed mid-set. */
+  activeSession: WorkoutSession | null;
+  startSession: (workout: Workout) => Promise<void>;
+  updateSession: (session: WorkoutSession) => Promise<void>;
+  finishSession: () => Promise<void>;
+  discardSession: () => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
@@ -43,6 +57,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfileState] = useState<UserProfile | null>(null);
   const [meals, setMeals] = useState<Meal[]>([]);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [sessions, setSessions] = useState<WorkoutSession[]>([]);
+  const [activeSession, setActiveSession] = useState<WorkoutSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [todayKey, setTodayKey] = useState(() => toDateKey(new Date()));
   const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
@@ -51,10 +67,18 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      const [p, m, w] = await Promise.all([loadProfile(), loadMeals(), loadWorkouts()]);
+      const [p, m, w, s, active] = await Promise.all([
+        loadProfile(),
+        loadMeals(),
+        loadWorkouts(),
+        loadSessions(),
+        loadActiveSession(),
+      ]);
       setProfileState(p);
       setMeals(m);
       setWorkouts(w);
+      setSessions(s);
+      setActiveSession(active);
       setLoading(false);
     })();
   }, []);
@@ -116,6 +140,52 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     setWorkouts(updated);
   }, []);
 
+  const startSession = useCallback(async (workout: Workout) => {
+    const session: WorkoutSession = {
+      id: createId(),
+      workoutId: workout.id,
+      workoutName: workout.name,
+      startedAt: Date.now(),
+      finishedAt: null,
+      exercises: workout.exercises.map(exercise => ({
+        id: createId(),
+        name: exercise.name,
+        targetReps: exercise.unit === 'reps' ? exercise.reps : null,
+        sets: Array.from({ length: Math.max(1, exercise.sets) }, () => ({
+          id: createId(),
+          weightKg: null,
+          reps: null,
+          done: false,
+        })),
+      })),
+    };
+    setActiveSession(session);
+    await saveActiveSession(session);
+  }, []);
+
+  const updateSession = useCallback(async (session: WorkoutSession) => {
+    setActiveSession(session);
+    await saveActiveSession(session);
+  }, []);
+
+  const discardSession = useCallback(async () => {
+    setActiveSession(null);
+    await saveActiveSession(null);
+  }, []);
+
+  const finishSession = useCallback(async () => {
+    setActiveSession(current => {
+      if (!current) return null;
+      // A session with nothing ticked would only add noise to the history.
+      if (completedSets(current) > 0) {
+        const finished = { ...current, finishedAt: Date.now() };
+        appendSession(finished).then(setSessions);
+      }
+      saveActiveSession(null);
+      return null;
+    });
+  }, []);
+
   const dayMeals = useMemo(() => meals.filter(m => m.dateKey === selectedDateKey), [meals, selectedDateKey]);
 
   const value = useMemo(
@@ -132,8 +202,32 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       workouts,
       saveWorkout,
       deleteWorkout,
+      sessions,
+      activeSession,
+      startSession,
+      updateSession,
+      finishSession,
+      discardSession,
     }),
-    [profile, todayKey, selectedDateKey, dayMeals, loading, setProfile, addMeal, deleteMeal, workouts, saveWorkout, deleteWorkout]
+    [
+      profile,
+      todayKey,
+      selectedDateKey,
+      dayMeals,
+      loading,
+      setProfile,
+      addMeal,
+      deleteMeal,
+      workouts,
+      saveWorkout,
+      deleteWorkout,
+      sessions,
+      activeSession,
+      startSession,
+      updateSession,
+      finishSession,
+      discardSession,
+    ]
   );
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;

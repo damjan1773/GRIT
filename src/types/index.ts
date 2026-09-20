@@ -58,6 +58,32 @@ export interface Workout {
   updatedAt: number;
 }
 
+export interface SessionSet {
+  id: string;
+  /** Null until typed or confirmed — the row shows last time's number meanwhile. */
+  weightKg: number | null;
+  reps: number | null;
+  done: boolean;
+}
+
+export interface SessionExercise {
+  id: string;
+  name: string;
+  /** The workout's prescribed reps, used as a placeholder when there is no history. */
+  targetReps: number | null;
+  sets: SessionSet[];
+}
+
+export interface WorkoutSession {
+  id: string;
+  workoutId: string;
+  workoutName: string;
+  startedAt: number;
+  /** Null while the session is running. */
+  finishedAt: number | null;
+  exercises: SessionExercise[];
+}
+
 export interface Meal extends MealMacros {
   id: string;
   name: string;

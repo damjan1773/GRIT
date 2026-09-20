@@ -8,20 +8,22 @@ import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { Icon } from '../components/Icon';
 import { useAppData } from '../context/AppDataContext';
 import { BUILT_IN_WORKOUTS } from '../data/builtInWorkouts';
-import { Workout } from '../types';
-import { estimateMinutes, exerciseCountLabel, workoutIcon } from '../utils/workouts';
+import { Workout, WorkoutSession } from '../types';
+import { estimateMinutes, exerciseCountLabel, formatDuration, workoutIcon } from '../utils/workouts';
 import { WorkoutBuilderScreen } from './WorkoutBuilderScreen';
 import { WorkoutDetailScreen } from './WorkoutDetailScreen';
+import { WorkoutSessionScreen } from './WorkoutSessionScreen';
 
 type TrainingView =
   | { kind: 'list' }
   | { kind: 'detail'; workoutId: string }
   /** baseId: a saved workout to edit, or a built-in one to copy. */
-  | { kind: 'build'; baseId?: string };
+  | { kind: 'build'; baseId?: string }
+  | { kind: 'session' };
 
 export function TrainingScreen() {
   const navigation = useNavigation<any>();
-  const { workouts, saveWorkout, deleteWorkout } = useAppData();
+  const { workouts, saveWorkout, deleteWorkout, activeSession, startSession } = useAppData();
   const [view, setView] = useState<TrainingView>({ kind: 'list' });
 
   // Tapping the tab while already on it goes back to the list, as native tab bars do.
@@ -35,6 +37,16 @@ export function TrainingScreen() {
 
   const findWorkout = (id?: string): Workout | undefined =>
     id ? [...workouts, ...BUILT_IN_WORKOUTS].find(w => w.id === id) : undefined;
+
+  /** One workout at a time: with a session running, start resumes it instead. */
+  async function start(workout: Workout) {
+    if (!activeSession) await startSession(workout);
+    setView({ kind: 'session' });
+  }
+
+  if (view.kind === 'session' && activeSession) {
+    return <WorkoutSessionScreen session={activeSession} onMinimize={() => setView({ kind: 'list' })} />;
+  }
 
   if (view.kind === 'build') {
     const base = findWorkout(view.baseId);
@@ -58,6 +70,8 @@ export function TrainingScreen() {
           workout={workout}
           onBack={() => setView({ kind: 'list' })}
           onCustomize={() => setView({ kind: 'build', baseId: workout.id })}
+          onStart={() => start(workout)}
+          sessionRunning={!!activeSession}
           onDelete={async () => {
             await deleteWorkout(workout.id);
             setView({ kind: 'list' });
@@ -70,6 +84,8 @@ export function TrainingScreen() {
   return (
     <WorkoutList
       workouts={workouts}
+      activeSession={activeSession}
+      onResume={() => setView({ kind: 'session' })}
       onOpen={id => setView({ kind: 'detail', workoutId: id })}
       onCreate={() => setView({ kind: 'build' })}
     />
@@ -78,16 +94,40 @@ export function TrainingScreen() {
 
 interface WorkoutListProps {
   workouts: Workout[];
+  activeSession: WorkoutSession | null;
+  onResume: () => void;
   onOpen: (id: string) => void;
   onCreate: () => void;
 }
 
-function WorkoutList({ workouts, onOpen, onCreate }: WorkoutListProps) {
+function WorkoutList({ workouts, activeSession, onResume, onOpen, onCreate }: WorkoutListProps) {
   const styles = useThemedStyles(makeStyles);
+  const [now, setNow] = useState(Date.now());
+
+  // Keeps the banner's clock moving while the list is open.
+  useEffect(() => {
+    if (!activeSession) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [activeSession]);
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Trening</Text>
       <Text style={styles.subtitle}>Izaberi gotov trening ili napravi svoj.</Text>
+
+      {activeSession && (
+        <Pressable onPress={onResume} style={styles.resumeCard} accessibilityRole="button">
+          <View style={styles.resumeDot} />
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={styles.resumeTitle} numberOfLines={1}>
+              {activeSession.workoutName}
+            </Text>
+            <Text style={styles.resumeSub}>trening u toku — nastavi</Text>
+          </View>
+          <Text style={styles.resumeTime}>{formatDuration(now - activeSession.startedAt)}</Text>
+        </Pressable>
+      )}
 
       <Pressable onPress={onCreate} accessibilityRole="button" style={({ pressed }) => pressed && { opacity: 0.9 }}>
         <LinearGradient
@@ -202,4 +242,20 @@ const makeStyles = (t: Theme) =>
     cardMeta: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: t.ink(0.45), marginTop: 2 },
     tagPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, backgroundColor: 'rgba(143,233,206,0.13)' },
     tagText: { fontFamily: 'Poppins_600SemiBold', fontSize: 10, color: colors.mint },
+    resumeCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      marginBottom: 16,
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      borderRadius: 20,
+      backgroundColor: 'rgba(143,233,206,0.13)',
+      borderWidth: 1,
+      borderColor: 'rgba(143,233,206,0.35)',
+    },
+    resumeDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.mint },
+    resumeTitle: { fontFamily: 'Poppins_700Bold', fontSize: 13.5, color: t.text },
+    resumeSub: { fontFamily: 'Poppins_500Medium', fontSize: 11, color: colors.mint, marginTop: 1 },
+    resumeTime: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 15, color: t.text },
   });

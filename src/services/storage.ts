@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Meal, UserProfile, Workout } from '../types';
+import { Meal, UserProfile, Workout, WorkoutSession } from '../types';
 import { ThemeMode } from '../theme/theme';
 
 const KEYS = {
@@ -7,6 +7,8 @@ const KEYS = {
   meals: 'nutra:meals',
   theme: 'nutra:theme',
   workouts: 'nutra:workouts',
+  sessions: 'nutra:sessions',
+  activeSession: 'nutra:activeSession',
 };
 
 export async function loadThemeMode(): Promise<ThemeMode | null> {
@@ -80,6 +82,29 @@ export async function saveWorkout(workout: Workout): Promise<Workout[]> {
   return updated;
 }
 
+/** Finished sessions, newest first — the source of the "last time" numbers. */
+export async function loadSessions(): Promise<WorkoutSession[]> {
+  const raw = await AsyncStorage.getItem(KEYS.sessions);
+  return raw ? (JSON.parse(raw) as WorkoutSession[]) : [];
+}
+
+export async function appendSession(session: WorkoutSession): Promise<WorkoutSession[]> {
+  const updated = [session, ...(await loadSessions())];
+  await AsyncStorage.setItem(KEYS.sessions, JSON.stringify(updated));
+  return updated;
+}
+
+/** Kept separately so a workout survives the app being closed mid-set. */
+export async function loadActiveSession(): Promise<WorkoutSession | null> {
+  const raw = await AsyncStorage.getItem(KEYS.activeSession);
+  return raw ? (JSON.parse(raw) as WorkoutSession) : null;
+}
+
+export async function saveActiveSession(session: WorkoutSession | null): Promise<void> {
+  if (session) await AsyncStorage.setItem(KEYS.activeSession, JSON.stringify(session));
+  else await AsyncStorage.removeItem(KEYS.activeSession);
+}
+
 export async function deleteWorkout(id: string): Promise<Workout[]> {
   const updated = (await loadWorkouts()).filter(w => w.id !== id);
   await AsyncStorage.setItem(KEYS.workouts, JSON.stringify(updated));
@@ -92,5 +117,5 @@ export async function loadMealsForDate(dateKey: string): Promise<Meal[]> {
 }
 
 export async function clearAll(): Promise<void> {
-  await AsyncStorage.multiRemove([KEYS.profile, KEYS.meals, KEYS.workouts]);
+  await AsyncStorage.multiRemove([KEYS.profile, KEYS.meals, KEYS.workouts, KEYS.sessions, KEYS.activeSession]);
 }
