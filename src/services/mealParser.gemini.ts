@@ -1,6 +1,6 @@
 import { MEAL_PARSER_API_KEY, MEAL_PARSER_MODEL } from '../config/aiConfig';
 import { MealParserError } from './mealParserError';
-import { MealParseItem, MealParseResult } from './mealParser.types';
+import { MealParseItem, MealParseResult, MealUnit, stepFor, sumTotals } from './mealParser.types';
 
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/interactions';
 /** A call takes a few seconds; a phone on a slow connection needs room beyond that. */
@@ -9,7 +9,7 @@ const TIMEOUT_MS = 40_000;
 const RETRY_STATUSES = new Set([500, 502, 503, 504]);
 const RETRY_DELAY_MS = 1500;
 
-/** Per-unit macros, so the confirm card's quantity steppers keep working. */
+/** Amounts in grams with macros per 100 g, so the card can edit in 10 g steps. */
 const RESPONSE_SCHEMA = {
   type: 'object',
   properties: {
@@ -19,14 +19,14 @@ const RESPONSE_SCHEMA = {
         type: 'object',
         properties: {
           name: { type: 'string' },
-          unitLabel: { type: 'string' },
-          qty: { type: 'number' },
-          unitCalories: { type: 'number' },
-          unitProtein: { type: 'number' },
-          unitCarbs: { type: 'number' },
-          unitFats: { type: 'number' },
+          unit: { type: 'string', enum: ['g', 'ml', 'kom'] },
+          amount: { type: 'number' },
+          perCalories: { type: 'number' },
+          perProtein: { type: 'number' },
+          perCarbs: { type: 'number' },
+          perFats: { type: 'number' },
         },
-        required: ['name', 'unitLabel', 'qty', 'unitCalories', 'unitProtein', 'unitCarbs', 'unitFats'],
+        required: ['name', 'unit', 'amount', 'perCalories', 'perProtein', 'perCarbs', 'perFats'],
       },
     },
   },
@@ -37,10 +37,12 @@ function buildPrompt(text: string): string {
   return [
     'Ti si nutricionista. Razloži opis obroka na pojedinačne namirnice i proceni makronutrijente.',
     'Za svaku namirnicu vrati:',
-    '- name: naziv namirnice na srpskom (latinica)',
-    '- unitLabel: naziv jedne porcije, npr. "kom", "kriška", "100g", "šolja", "merica"',
-    '- qty: koliko tih jedinica je osoba pojela',
-    '- unitCalories, unitProtein, unitCarbs, unitFats: vrednosti za JEDNU jedinicu, ne za ukupnu količinu',
+    '- name: naziv namirnice na srpskom (latinica), malim slovima',
+    '- unit: "g" za namirnice koje se mere u gramima, "ml" za tečnosti, "kom" samo za komadne (jaje, kriška hleba, banana)',
+    '- amount: ukupna količina koju je osoba pojela — broj grama, mililitara ili komada (ceo broj)',
+    '- perCalories, perProtein, perCarbs, perFats: vrednosti na 100 g ili 100 ml, a za "kom" po JEDNOM komadu',
+    'Primer: "300g kobasice" → unit "g", amount 300, perCalories oko 320 (na 100 g).',
+    'Primer: "2 jajeta" → unit "kom", amount 2, perCalories oko 78 (po jajetu).',
     'Proteini, ugljeni hidrati i masti su u gramima. Koristi realne prosečne vrednosti.',
     'Ako količina nije navedena, pretpostavi jednu uobičajenu porciju.',
     'Ako u tekstu nema hrane, vrati praznu listu.',
@@ -82,24 +84,36 @@ function parseJson(text: string): any {
 
 function positive(value: unknown): number {
   const n = Number(value);
-  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0;
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 10) / 10 : 0;
+}
+
+/** Anything not clearly weighed or poured is counted in pieces. */
+function toUnit(raw: unknown): MealUnit {
+  const text = String(raw ?? '').trim().toLowerCase();
+  if (text.startsWith('ml') || text.includes('mililit')) return 'ml';
+  if (text === 'g' || text.startsWith('g ') || text.includes('gram')) return 'g';
+  return 'kom';
 }
 
 function toItems(parsed: any): MealParseItem[] {
   const raw = Array.isArray(parsed?.items) ? parsed.items : [];
   return raw
     .filter((item: any) => typeof item?.name === 'string' && item.name.trim())
-    .map(
-      (item: any): MealParseItem => ({
+    .map((item: any): MealParseItem => {
+      const unit = toUnit(item.unit);
+      const step = stepFor(unit);
+      // Whole numbers only: grams land on 10s, pieces on 1s, so +/- stays tidy.
+      const amount = Math.max(step, Math.round((Number(item.amount) || step) / step) * step);
+      return {
         name: String(item.name).trim(),
-        unitLabel: typeof item.unitLabel === 'string' && item.unitLabel.trim() ? item.unitLabel.trim() : 'porcija',
-        qty: Math.max(0.5, positive(item.qty) || 1),
-        unitCalories: positive(item.unitCalories),
-        unitProtein: positive(item.unitProtein),
-        unitCarbs: positive(item.unitCarbs),
-        unitFats: positive(item.unitFats),
-      })
-    );
+        unit,
+        amount,
+        perCalories: positive(item.perCalories),
+        perProtein: positive(item.perProtein),
+        perCarbs: positive(item.perCarbs),
+        perFats: positive(item.perFats),
+      };
+    });
 }
 
 /** Turns an HTTP status into something the user can act on. */
@@ -166,22 +180,5 @@ export async function parseMealGemini(text: string): Promise<MealParseResult> {
     throw new MealParserError('Nisam prepoznao hranu u tome. Probaj npr. „150g piletine i šolja riže“.');
   }
 
-  const totals = items.reduce(
-    (acc, item) => ({
-      calories: acc.calories + item.unitCalories * item.qty,
-      protein: acc.protein + item.unitProtein * item.qty,
-      carbs: acc.carbs + item.unitCarbs * item.qty,
-      fats: acc.fats + item.unitFats * item.qty,
-    }),
-    { calories: 0, protein: 0, carbs: 0, fats: 0 }
-  );
-
-  return {
-    name: items.map(item => item.name).join(' + '),
-    calories: Math.round(totals.calories),
-    protein: Math.round(totals.protein),
-    carbs: Math.round(totals.carbs),
-    fats: Math.round(totals.fats),
-    items,
-  };
+  return { name: items.map(item => item.name).join(' + '), ...sumTotals(items), items };
 }

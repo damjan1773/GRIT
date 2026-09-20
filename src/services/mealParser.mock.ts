@@ -1,26 +1,34 @@
-import { MealParseItem, MealParseResult } from './mealParser.types';
+import { MealParseItem, MealParseResult, MealUnit, sumTotals } from './mealParser.types';
 
-// Small reference table so the mock can produce plausible-looking (not just
-// pure-random) numbers when it recognizes a common food word. Purely for a
-// believable placeholder UI — has no bearing on the real parsing backend.
-const KNOWN_FOODS: { aliases: string[]; name: string; unit: string; k: number; p: number; c: number; f: number }[] = [
-  { aliases: ['jaje', 'jaja'], name: 'Jaje, kuvano', unit: 'kom', k: 78, p: 6.3, c: 0.6, f: 5.3 },
-  { aliases: ['tost', 'hleb', 'kifl'], name: 'Tost hleb', unit: 'kriška', k: 80, p: 2.7, c: 14, f: 1 },
-  { aliases: ['banan'], name: 'Banana', unit: 'kom', k: 105, p: 1.3, c: 27, f: 0.4 },
-  { aliases: ['jabuk'], name: 'Jabuka', unit: 'kom', k: 95, p: 0.5, c: 25, f: 0.3 },
-  { aliases: ['jogurt'], name: 'Grčki jogurt', unit: '100g', k: 97, p: 9, c: 3.9, f: 5 },
-  { aliases: ['pilet', 'pilec', 'piletin'], name: 'Pileća prsa', unit: '100g', k: 165, p: 31, c: 0, f: 3.6 },
-  { aliases: ['riz', 'pirinač'], name: 'Riža, kuvana', unit: '100g', k: 130, p: 2.7, c: 28, f: 0.3 },
-  { aliases: ['ovsen', 'pahulj', 'musli'], name: 'Ovsene pahuljice', unit: '50g', k: 190, p: 6.6, c: 33, f: 3.4 },
-  { aliases: ['avokad'], name: 'Avokado', unit: 'kom', k: 240, p: 3, c: 12, f: 22 },
-  { aliases: ['kafa', 'kafu', 'espres'], name: 'Espreso', unit: 'šolja', k: 5, p: 0.3, c: 0, f: 0 },
-  { aliases: ['sir', 'kackav', 'feta'], name: 'Sir', unit: '30g', k: 105, p: 7.5, c: 0.6, f: 8 },
-  { aliases: ['losos', 'ribu', 'riba'], name: 'Losos', unit: '100g', k: 208, p: 20, c: 0, f: 13 },
-  { aliases: ['salat'], name: 'Zelena salata', unit: '100g', k: 20, p: 1.4, c: 2.9, f: 0.2 },
-  { aliases: ['sejk', 'protein', 'whey'], name: 'Proteinski šejk', unit: 'merica', k: 120, p: 24, c: 3, f: 1.5 },
-  { aliases: ['pasta', 'testenin', 'makaron', 'spaget'], name: 'Pasta, kuvana', unit: '100g', k: 158, p: 5.8, c: 31, f: 0.9 },
-  { aliases: ['mleko', 'mleka'], name: 'Mleko', unit: '100ml', k: 52, p: 3.4, c: 4.8, f: 2 },
-  { aliases: ['pica', 'pice', 'picu'], name: 'Pica, kriška', unit: 'kom', k: 285, p: 12, c: 36, f: 10 },
+/**
+ * Small reference table so the mock produces plausible-looking numbers when it
+ * recognizes a common food word. Values are per 100 g / 100 ml, or per piece
+ * for 'kom'. Purely a placeholder — the real work is in mealParser.gemini.
+ */
+const KNOWN_FOODS: {
+  aliases: string[];
+  name: string;
+  unit: MealUnit;
+  amount: number;
+  per: [calories: number, protein: number, carbs: number, fats: number];
+}[] = [
+  { aliases: ['jaje', 'jaja'], name: 'jaje', unit: 'kom', amount: 2, per: [78, 6.3, 0.6, 5.3] },
+  { aliases: ['tost', 'hleb', 'kifl'], name: 'hleb', unit: 'g', amount: 60, per: [265, 9, 49, 3.2] },
+  { aliases: ['banan'], name: 'banana', unit: 'kom', amount: 1, per: [105, 1.3, 27, 0.4] },
+  { aliases: ['jabuk'], name: 'jabuka', unit: 'kom', amount: 1, per: [95, 0.5, 25, 0.3] },
+  { aliases: ['jogurt'], name: 'grčki jogurt', unit: 'g', amount: 150, per: [97, 9, 3.9, 5] },
+  { aliases: ['pilet', 'pilec', 'piletin'], name: 'pileća prsa', unit: 'g', amount: 150, per: [165, 31, 0, 3.6] },
+  { aliases: ['riz', 'pirinač'], name: 'riža, kuvana', unit: 'g', amount: 150, per: [130, 2.7, 28, 0.3] },
+  { aliases: ['ovsen', 'pahulj', 'musli'], name: 'ovsene pahuljice', unit: 'g', amount: 50, per: [380, 13, 67, 7] },
+  { aliases: ['avokad'], name: 'avokado', unit: 'kom', amount: 1, per: [240, 3, 12, 22] },
+  { aliases: ['kafa', 'kafu', 'espres'], name: 'espreso', unit: 'ml', amount: 30, per: [17, 1, 0, 0] },
+  { aliases: ['sir', 'kackav', 'feta'], name: 'sir', unit: 'g', amount: 30, per: [350, 25, 2, 28] },
+  { aliases: ['losos', 'ribu', 'riba'], name: 'losos', unit: 'g', amount: 150, per: [208, 20, 0, 13] },
+  { aliases: ['salat'], name: 'zelena salata', unit: 'g', amount: 100, per: [20, 1.4, 2.9, 0.2] },
+  { aliases: ['sejk', 'protein', 'whey'], name: 'proteinski šejk', unit: 'kom', amount: 1, per: [120, 24, 3, 1.5] },
+  { aliases: ['pasta', 'testenin', 'makaron', 'spaget'], name: 'pasta, kuvana', unit: 'g', amount: 200, per: [158, 5.8, 31, 0.9] },
+  { aliases: ['mleko', 'mleka'], name: 'mleko', unit: 'ml', amount: 200, per: [52, 3.4, 4.8, 2] },
+  { aliases: ['pica', 'pice', 'picu'], name: 'pica, kriška', unit: 'kom', amount: 2, per: [285, 12, 36, 10] },
 ];
 
 function normalize(text: string): string {
@@ -32,81 +40,32 @@ function randomBetween(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
 
-function round(n: number): number {
-  return Math.round(n);
-}
-
-function totalOf(item: MealParseItem) {
-  return {
-    calories: round(item.unitCalories * item.qty),
-    protein: round(item.unitProtein * item.qty),
-    carbs: round(item.unitCarbs * item.qty),
-    fats: round(item.unitFats * item.qty),
-  };
-}
-
 function genericItem(label: string): MealParseItem {
-  // Reasonable single-serving placeholder range when nothing is recognized.
-  const calories = randomBetween(180, 520);
-  const protein = (randomBetween(0.08, 0.22) * calories) / 4;
-  const fats = (randomBetween(0.15, 0.35) * calories) / 9;
-  const carbsCalories = Math.max(0, calories - protein * 4 - fats * 9);
-  const carbs = carbsCalories / 4;
-  return {
-    name: label,
-    unitLabel: 'porcija',
-    qty: 1,
-    unitCalories: round(calories),
-    unitProtein: round(protein),
-    unitCarbs: round(carbs),
-    unitFats: round(fats),
-  };
+  // Reasonable single-serving placeholder when nothing is recognized.
+  const calories = Math.round(randomBetween(180, 520));
+  const protein = Math.round((randomBetween(0.08, 0.22) * calories) / 4);
+  const fats = Math.round((randomBetween(0.15, 0.35) * calories) / 9);
+  const carbs = Math.max(0, Math.round((calories - protein * 4 - fats * 9) / 4));
+  return { name: label, unit: 'kom', amount: 1, perCalories: calories, perProtein: protein, perCarbs: carbs, perFats: fats };
 }
 
 /**
- * Placeholder "AI" parser: recognizes a handful of common food words and
- * otherwise falls back to randomized-but-plausible macros, so the
- * confirm/edit/save flow can be built and tested before a real model is wired
- * up through src/config/aiConfig.ts.
+ * Placeholder parser: recognizes a handful of common food words and otherwise
+ * falls back to a plausible single portion, so the confirm/edit/save flow can be
+ * exercised offline and without burning API quota.
  */
 export async function parseMealMock(text: string): Promise<MealParseResult> {
   await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 400));
 
-  const normalized = normalize(text);
-  const words = normalized.replace(/[.,;!?]/g, ' ').trim().split(/\s+/).filter(Boolean);
+  const words = normalize(text).replace(/[.,;!?]/g, ' ').trim().split(/\s+/).filter(Boolean);
 
   const matched: MealParseItem[] = [];
   for (const food of KNOWN_FOODS) {
-    const hit = food.aliases.some(alias => words.some(w => w.startsWith(alias)));
-    if (!hit) continue;
-    const qty = Math.max(1, Math.round(randomBetween(0.8, 2.4)));
-    matched.push({
-      name: food.name,
-      unitLabel: food.unit,
-      qty,
-      unitCalories: food.k,
-      unitProtein: food.p,
-      unitCarbs: food.c,
-      unitFats: food.f,
-    });
+    if (!food.aliases.some(alias => words.some(w => w.startsWith(alias)))) continue;
+    const [perCalories, perProtein, perCarbs, perFats] = food.per;
+    matched.push({ name: food.name, unit: food.unit, amount: food.amount, perCalories, perProtein, perCarbs, perFats });
   }
 
-  const items = matched.length > 0 ? matched : [genericItem(text.trim() || 'Obrok')];
-
-  const totals = items.reduce(
-    (acc, it) => {
-      const t = totalOf(it);
-      return { calories: acc.calories + t.calories, protein: acc.protein + t.protein, carbs: acc.carbs + t.carbs, fats: acc.fats + t.fats };
-    },
-    { calories: 0, protein: 0, carbs: 0, fats: 0 }
-  );
-
-  return {
-    name: items.map(it => it.name).join(' + '),
-    calories: totals.calories,
-    protein: totals.protein,
-    carbs: totals.carbs,
-    fats: totals.fats,
-    items,
-  };
+  const items = matched.length > 0 ? matched : [genericItem(text.trim() || 'obrok')];
+  return { name: items.map(item => item.name).join(' + '), ...sumTotals(items), items };
 }

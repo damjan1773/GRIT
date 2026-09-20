@@ -7,7 +7,7 @@ import { Theme, whiteChipEdge } from '../theme/theme';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { Icon } from '../components/Icon';
 import { MealParserError, parseMealFromText } from '../services/mealParser';
-import { MealParseItem } from '../services/mealParser.types';
+import { MealParseItem, formatAmount, itemTotals, stepFor, sumTotals } from '../services/mealParser.types';
 import { useAppData } from '../context/AppDataContext';
 import { createId } from '../services/storage';
 import { forDay } from '../utils/dates';
@@ -24,25 +24,6 @@ let idCounter = 0;
 function nextId(): string {
   idCounter += 1;
   return `msg_${idCounter}`;
-}
-
-function itemTotal(item: MealParseItem) {
-  return {
-    calories: Math.round(item.unitCalories * item.qty),
-    protein: Math.round(item.unitProtein * item.qty),
-    carbs: Math.round(item.unitCarbs * item.qty),
-    fats: Math.round(item.unitFats * item.qty),
-  };
-}
-
-function cardTotals(items: MealParseItem[]) {
-  return items.reduce(
-    (acc, it) => {
-      const t = itemTotal(it);
-      return { calories: acc.calories + t.calories, protein: acc.protein + t.protein, carbs: acc.carbs + t.carbs, fats: acc.fats + t.fats };
-    },
-    { calories: 0, protein: 0, carbs: 0, fats: 0 }
-  );
 }
 
 export function MealEntryScreen() {
@@ -90,11 +71,16 @@ export function MealEntryScreen() {
     }
   }
 
-  function changeQty(messageId: string, itemIndex: number, delta: number) {
+  /** Grams and millilitres move in 10s, pieces in 1s, never below one step. */
+  function changeAmount(messageId: string, itemIndex: number, direction: 1 | -1) {
     setMessages(prev =>
       prev.map(m => {
         if (m.id !== messageId || m.kind !== 'card') return m;
-        const items = m.items.map((it, i) => (i === itemIndex ? { ...it, qty: Math.max(1, it.qty + delta) } : it));
+        const items = m.items.map((item, i) => {
+          if (i !== itemIndex) return item;
+          const step = stepFor(item.unit);
+          return { ...item, amount: Math.max(step, item.amount + direction * step) };
+        });
         return { ...m, items };
       })
     );
@@ -110,7 +96,7 @@ export function MealEntryScreen() {
   async function saveCard(messageId: string) {
     const message = messages.find(m => m.id === messageId);
     if (!message || message.kind !== 'card') return;
-    const totals = cardTotals(message.items);
+    const totals = sumTotals(message.items);
     const meal = {
       id: createId(),
       name: message.items.map(it => it.name).join(' + '),
@@ -185,7 +171,7 @@ export function MealEntryScreen() {
             );
           }
           // card
-          const totals = cardTotals(message.items);
+          const totals = sumTotals(message.items);
           return (
             <View key={message.id} style={styles.card}>
               <View style={styles.cardHeader}>
@@ -197,7 +183,7 @@ export function MealEntryScreen() {
               </View>
 
               {message.items.map((item, index) => {
-                const t = itemTotal(item);
+                const t = itemTotals(item);
                 return (
                   <View key={`${message.id}_${index}`} style={styles.itemRow}>
                     <View style={{ flex: 1, minWidth: 0 }}>
@@ -210,20 +196,26 @@ export function MealEntryScreen() {
                     </View>
                     {message.pending ? (
                       <View style={styles.qtyControls}>
-                        <Pressable onPress={() => changeQty(message.id, index, -1)} style={styles.qtyBtn}>
+                        <Pressable
+                          onPress={() => changeAmount(message.id, index, -1)}
+                          style={styles.qtyBtn}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Smanji: ${item.name}`}
+                        >
                           <Icon name="remove" size={15} color={theme.text} />
                         </Pressable>
-                        <Text style={styles.qtyLabel}>
-                          {item.qty} {item.unitLabel}
-                        </Text>
-                        <Pressable onPress={() => changeQty(message.id, index, 1)} style={styles.qtyBtn}>
+                        <Text style={styles.qtyLabel}>{formatAmount(item)}</Text>
+                        <Pressable
+                          onPress={() => changeAmount(message.id, index, 1)}
+                          style={styles.qtyBtn}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Povećaj: ${item.name}`}
+                        >
                           <Icon name="add" size={15} color={theme.text} />
                         </Pressable>
                       </View>
                     ) : (
-                      <Text style={styles.qtyLabelLocked}>
-                        {item.qty} {item.unitLabel}
-                      </Text>
+                      <Text style={styles.qtyLabelLocked}>{formatAmount(item)}</Text>
                     )}
                     <Text style={styles.itemKcal}>{t.calories}</Text>
                   </View>
