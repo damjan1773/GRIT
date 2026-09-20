@@ -33,7 +33,8 @@ yarn-error.*
 # IDE
 .idea/
 
-# local env files
+# local env files — the API key lives here, keep it out of git
+.env
 .env*.local
 
 # typescript

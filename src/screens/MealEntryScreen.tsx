@@ -72,12 +72,24 @@ export function MealEntryScreen() {
     const typingId = nextId();
     setMessages(prev => [...prev, { id: nextId(), kind: 'user', text }, { id: typingId, kind: 'typing' }]);
 
-    const result = await parseMealFromText(text);
-
-    setMessages(prev => {
-      const withoutTyping = prev.filter(m => m.id !== typingId);
-      return [...withoutTyping, { id: nextId(), kind: 'card', items: result.items, pending: true, locked: false }];
-    });
+    try {
+      const result = await parseMealFromText(text);
+      setMessages(prev => [
+        ...prev.filter(m => m.id !== typingId),
+        { id: nextId(), kind: 'card', items: result.items, pending: true, locked: false },
+      ]);
+    } catch (error) {
+      // Network or model trouble: say so, rather than leaving the dots typing.
+      console.warn('parseMealFromText failed', error);
+      setMessages(prev => [
+        ...prev.filter(m => m.id !== typingId),
+        {
+          id: nextId(),
+          kind: 'bot',
+          text: 'Nisam uspeo da izračunam taj obrok. Proveri internet i probaj ponovo, ili napiši drugačije.',
+        },
+      ]);
+    }
   }
 
   function changeQty(messageId: string, itemIndex: number, delta: number) {
