@@ -91,7 +91,7 @@ export function WorkoutDetailScreen({
 
       <Pressable onPress={onCustomize} style={styles.secondaryBtn} accessibilityRole="button">
         <Icon name={workout.builtIn ? 'content_copy' : 'edit'} size={16} color={theme.text} />
-        <Text style={styles.secondaryText}>{workout.builtIn ? 'Prilagodi kao svoj' : 'Izmeni trening'}</Text>
+        <Text style={styles.secondaryText}>Izmeni trening</Text>
       </Pressable>
 
       {workout.builtIn ? (
