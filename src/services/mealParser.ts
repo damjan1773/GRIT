@@ -4,6 +4,7 @@ import { parseMealMock } from './mealParser.mock';
 import { MealParseResult } from './mealParser.types';
 
 export type { MealParseItem, MealParseResult } from './mealParser.types';
+export { MealParserError } from './mealParserError';
 
 /**
  * Single entry point for turning free-text ("pojeo sam 2 jajeta i tost") into

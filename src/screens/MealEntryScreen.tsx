@@ -6,7 +6,7 @@ import { colors, gradientColors, gradientLocations } from '../theme/colors';
 import { Theme, whiteChipEdge } from '../theme/theme';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { Icon } from '../components/Icon';
-import { parseMealFromText } from '../services/mealParser';
+import { MealParserError, parseMealFromText } from '../services/mealParser';
 import { MealParseItem } from '../services/mealParser.types';
 import { useAppData } from '../context/AppDataContext';
 import { createId } from '../services/storage';
@@ -79,16 +79,14 @@ export function MealEntryScreen() {
         { id: nextId(), kind: 'card', items: result.items, pending: true, locked: false },
       ]);
     } catch (error) {
-      // Network or model trouble: say so, rather than leaving the dots typing.
+      // Say what actually went wrong — a limit or a key is something you can act
+      // on, and leaving the dots typing tells you nothing.
       console.warn('parseMealFromText failed', error);
-      setMessages(prev => [
-        ...prev.filter(m => m.id !== typingId),
-        {
-          id: nextId(),
-          kind: 'bot',
-          text: 'Nisam uspeo da izračunam taj obrok. Proveri internet i probaj ponovo, ili napiši drugačije.',
-        },
-      ]);
+      const message =
+        error instanceof MealParserError
+          ? error.message
+          : 'Nisam uspeo da izračunam taj obrok. Proveri internet i probaj ponovo.';
+      setMessages(prev => [...prev.filter(m => m.id !== typingId), { id: nextId(), kind: 'bot', text: message }]);
     }
   }
 
