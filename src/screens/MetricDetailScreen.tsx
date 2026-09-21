@@ -7,7 +7,7 @@ import { DetailHeader } from '../components/DetailHeader';
 import { PeriodToggle } from '../components/PeriodToggle';
 import { StatTile } from '../components/StatTile';
 import { useAppData } from '../context/AppDataContext';
-import { MetricId, SECTION_TITLES, dailyValues, findMetric, sectionColor } from '../data/statMetrics';
+import { MetricId, dailyValues, findMetric, sectionColor } from '../data/statMetrics';
 import { dayLabel, dayOfMonth, weekdayShort } from '../utils/dates';
 import { Period, formatNumber, isOnGoal, periodDayKeys, summarize, trainingByDay } from '../utils/stats';
 
@@ -95,7 +95,7 @@ export function MetricDetailScreen({ metricId, period, onPeriodChange, onBack }:
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <DetailHeader title={metric.title} tag={SECTION_TITLES[metric.section]} onBack={onBack} />
+      <DetailHeader title={metric.title} onBack={onBack} />
 
       <View style={styles.filterRow}>
         <PeriodToggle value={period} onChange={onPeriodChange} />

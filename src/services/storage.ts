@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Meal, UserProfile, Workout, WorkoutSession } from '../types';
+import { Meal, UserProfile, WeightEntry, Workout, WorkoutSession } from '../types';
 import { ThemeMode } from '../theme/theme';
 
 const KEYS = {
@@ -9,6 +9,7 @@ const KEYS = {
   workouts: 'nutra:workouts',
   sessions: 'nutra:sessions',
   activeSession: 'nutra:activeSession',
+  weights: 'nutra:weights',
 };
 
 export async function loadThemeMode(): Promise<ThemeMode | null> {
@@ -111,11 +112,33 @@ export async function deleteWorkout(id: string): Promise<Workout[]> {
   return updated;
 }
 
+/** Weigh-ins, oldest first. */
+export async function loadWeights(): Promise<WeightEntry[]> {
+  const raw = await AsyncStorage.getItem(KEYS.weights);
+  return raw ? (JSON.parse(raw) as WeightEntry[]) : [];
+}
+
+async function storeWeights(entries: WeightEntry[]): Promise<WeightEntry[]> {
+  const sorted = [...entries].sort((a, b) => a.dateKey.localeCompare(b.dateKey));
+  await AsyncStorage.setItem(KEYS.weights, JSON.stringify(sorted));
+  return sorted;
+}
+
+/** Adds the day's weigh-in, or replaces it if that day already has one. */
+export async function saveWeight(entry: WeightEntry): Promise<WeightEntry[]> {
+  const others = (await loadWeights()).filter(e => e.dateKey !== entry.dateKey);
+  return storeWeights([...others, entry]);
+}
+
+export async function deleteWeight(dateKey: string): Promise<WeightEntry[]> {
+  return storeWeights((await loadWeights()).filter(e => e.dateKey !== dateKey));
+}
+
 export async function loadMealsForDate(dateKey: string): Promise<Meal[]> {
   const meals = await loadMeals();
   return meals.filter(m => m.dateKey === dateKey);
 }
 
 export async function clearAll(): Promise<void> {
-  await AsyncStorage.multiRemove([KEYS.profile, KEYS.meals, KEYS.workouts, KEYS.sessions, KEYS.activeSession]);
+  await AsyncStorage.multiRemove([KEYS.profile, KEYS.meals, KEYS.workouts, KEYS.sessions, KEYS.activeSession, KEYS.weights]);
 }

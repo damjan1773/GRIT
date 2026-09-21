@@ -84,6 +84,12 @@ export interface WorkoutSession {
   exercises: SessionExercise[];
 }
 
+/** One weigh-in per day; logging again the same day replaces it. */
+export interface WeightEntry {
+  dateKey: string;
+  kg: number;
+}
+
 export interface Meal extends MealMacros {
   id: string;
   name: string;

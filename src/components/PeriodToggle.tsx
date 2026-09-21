@@ -6,17 +6,30 @@ import { Theme } from '../theme/theme';
 import { useThemedStyles } from '../theme/ThemeContext';
 import { Period } from '../utils/stats';
 
-const OPTIONS: { id: Period; label: string }[] = [
+export interface ToggleOption<T extends string> {
+  id: T;
+  label: string;
+}
+
+const PERIOD_OPTIONS: ToggleOption<Period>[] = [
   { id: 'week', label: 'Nedelja' },
   { id: 'month', label: 'Mesec' },
 ];
 
+interface PeriodToggleProps<T extends string> {
+  value: T;
+  onChange: (value: T) => void;
+  /** Defaults to week / month. */
+  options?: ToggleOption<T>[];
+}
+
 /** The date range, in one row above everything it scopes. */
-export function PeriodToggle({ value, onChange }: { value: Period; onChange: (period: Period) => void }) {
+export function PeriodToggle<T extends string = Period>({ value, onChange, options }: PeriodToggleProps<T>) {
   const styles = useThemedStyles(makeStyles);
+  const list = options ?? (PERIOD_OPTIONS as unknown as ToggleOption<T>[]);
   return (
     <View style={styles.track} accessibilityRole="tablist">
-      {OPTIONS.map(option => {
+      {list.map(option => {
         const selected = option.id === value;
         return (
           <Pressable

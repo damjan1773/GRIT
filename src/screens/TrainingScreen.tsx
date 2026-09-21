@@ -120,7 +120,6 @@ function WorkoutList({ workouts, activeSession, onResume, onOpen, onCreate }: Wo
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Trening</Text>
-      <Text style={styles.subtitle}>Izaberi gotov trening ili napravi svoj.</Text>
 
       {activeSession && (
         <Pressable onPress={onResume} style={styles.resumeCard} accessibilityRole="button">
@@ -206,8 +205,7 @@ const makeStyles = (t: Theme) =>
   StyleSheet.create({
     screen: { flex: 1, backgroundColor: t.bg },
     content: { paddingTop: 62, paddingHorizontal: 22, paddingBottom: 32 },
-    title: { fontFamily: 'Poppins_900Black_Italic', fontSize: 30, color: t.text, letterSpacing: -0.3 },
-    subtitle: { fontFamily: 'Poppins_500Medium', fontSize: 13, color: t.ink(0.5), marginTop: 4, marginBottom: 20 },
+    title: { fontFamily: 'Poppins_900Black_Italic', fontSize: 30, color: t.text, letterSpacing: -0.3, marginBottom: 18 },
     createCard: { borderRadius: 30, padding: 20, flexDirection: 'row', alignItems: 'center', gap: 14, overflow: 'hidden' },
     createGlow: {
       position: 'absolute',

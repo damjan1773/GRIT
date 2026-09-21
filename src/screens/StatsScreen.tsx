@@ -8,7 +8,8 @@ import { Icon } from '../components/Icon';
 import { Sparkline } from '../components/charts/Sparkline';
 import { useAppData } from '../context/AppDataContext';
 import { METRICS, MetricDef, MetricId, MetricSection, SECTION_TITLES, dailyValues, sectionColor } from '../data/statMetrics';
-import { formatSignedAmount } from '../utils/format';
+import { dayLabel } from '../utils/dates';
+import { formatSigned, formatSignedAmount } from '../utils/format';
 import { exerciseCountLabel } from '../utils/workouts';
 import {
   DayValue,
@@ -24,12 +25,14 @@ import {
 } from '../utils/stats';
 import { MetricDetailScreen } from './MetricDetailScreen';
 import { ExerciseProgressScreen, StrengthListScreen } from './StrengthScreen';
+import { WeightScreen, weightsInRange } from './WeightScreen';
 
 type StatsView =
   | { kind: 'list' }
   | { kind: 'metric'; id: MetricId }
   | { kind: 'strength' }
-  | { kind: 'exercise'; key: string };
+  | { kind: 'exercise'; key: string }
+  | { kind: 'weight' };
 
 export function StatsScreen() {
   const navigation = useNavigation<any>();
@@ -64,17 +67,25 @@ export function StatsScreen() {
   if (view.kind === 'exercise') {
     return <ExerciseProgressScreen exerciseKey={view.key} onBack={() => setView({ kind: 'strength' })} />;
   }
+  if (view.kind === 'weight') {
+    return <WeightScreen onBack={() => setView({ kind: 'list' })} />;
+  }
   return (
-    <StatsList onOpenMetric={id => setView({ kind: 'metric', id })} onOpenStrength={() => setView({ kind: 'strength' })} />
+    <StatsList
+      onOpenMetric={id => setView({ kind: 'metric', id })}
+      onOpenStrength={() => setView({ kind: 'strength' })}
+      onOpenWeight={() => setView({ kind: 'weight' })}
+    />
   );
 }
 
 interface StatsListProps {
   onOpenMetric: (id: MetricId) => void;
   onOpenStrength: () => void;
+  onOpenWeight: () => void;
 }
 
-function StatsList({ onOpenMetric, onOpenStrength }: StatsListProps) {
+function StatsList({ onOpenMetric, onOpenStrength, onOpenWeight }: StatsListProps) {
   const styles = useThemedStyles(makeStyles);
   const { meals, sessions, todayKey } = useAppData();
   const week = useMemo(() => periodDayKeys(todayKey, 'week'), [todayKey]);
@@ -92,7 +103,9 @@ function StatsList({ onOpenMetric, onOpenStrength }: StatsListProps) {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Statistika</Text>
-      <Text style={styles.subtitle}>Poslednjih 7 dana · dodirni karticu za detalje</Text>
+
+      <Text style={styles.sectionTitle}>Težina</Text>
+      <WeightCard onPress={onOpenWeight} />
 
       {sections.map(section => (
         <View key={section}>
@@ -201,6 +214,46 @@ function StrengthCard({ featured, tracked, onPress }: StrengthCardProps) {
   );
 }
 
+function WeightCard({ onPress }: { onPress: () => void }) {
+  const styles = useThemedStyles(makeStyles);
+  const { weights, todayKey } = useAppData();
+  const latest = weights[weights.length - 1];
+  const loggedToday = latest?.dateKey === todayKey;
+  const week = weightsInRange(weights, todayKey, 'week');
+  const change = week.length > 1 ? week[week.length - 1].kg - week[0].kg : null;
+
+  const valueText = latest ? formatNumber(latest.kg, 1) : '—';
+  const caption = !latest
+    ? 'dodirni da uneseš prvu težinu'
+    : change !== null
+      ? `${formatSigned(change, 1)} kg za 7 dana`
+      : loggedToday
+        ? 'uneto danas'
+        : 'dodirni da uneseš današnju';
+
+  return (
+    <CardShell
+      icon="monitor_weight"
+      color={chartColors.nutrition}
+      title="Telesna težina"
+      meta={latest ? (loggedToday ? 'Danas' : dayLabel(latest.dateKey, todayKey)) : ''}
+      onPress={onPress}
+      accessibilityLabel={`Telesna težina: ${valueText} kg, ${caption}`}
+    >
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={styles.cardValue}>
+          {valueText}
+          {latest ? <Text style={styles.cardUnit}> kg</Text> : null}
+        </Text>
+        <Text style={styles.cardCaption}>{caption}</Text>
+      </View>
+      {weights.length > 1 ? (
+        <Sparkline values={weights.slice(-7).map(w => w.kg)} color={chartColors.nutrition} relative />
+      ) : null}
+    </CardShell>
+  );
+}
+
 interface CardShellProps {
   icon: string;
   color: string;
@@ -245,7 +298,6 @@ const makeStyles = (t: Theme) =>
     screen: { flex: 1, backgroundColor: t.bg },
     content: { paddingTop: 62, paddingHorizontal: 22, paddingBottom: 32 },
     title: { fontFamily: 'Poppins_900Black_Italic', fontSize: 30, color: t.text, letterSpacing: -0.3 },
-    subtitle: { fontFamily: 'Poppins_500Medium', fontSize: 13, color: t.ink(0.5), marginTop: 4 },
     sectionTitle: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 18, color: t.text, marginTop: 24, marginBottom: 12 },
     list: { gap: 10 },
     card: {

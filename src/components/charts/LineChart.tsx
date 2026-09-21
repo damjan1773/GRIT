@@ -11,6 +11,12 @@ export interface LinePoint {
   label: string;
   /** Read out when the point is picked. */
   description: string;
+  /**
+   * Position on a time axis, e.g. a day number. When every point has one, points
+   * are spaced by it, so a week without a weigh-in shows as a gap; otherwise they
+   * sit evenly, one per session.
+   */
+  at?: number;
 }
 
 interface LineChartProps {
@@ -20,6 +26,8 @@ interface LineChartProps {
   onSelect: (index: number) => void;
   formatTick: (value: number) => string;
   plotHeight?: number;
+  /** Gridlines land on multiples of this — 0,5 kg on a body-weight axis, never 0,8 or 0,15. */
+  stepUnit?: number;
 }
 
 const GUTTER = 42;
@@ -32,7 +40,7 @@ const INSET = 10;
  * colour. The scale hugs the data rather than starting at zero — the change is
  * the point here, not the size of the number.
  */
-export function LineChart({ data, color, selectedIndex, onSelect, formatTick, plotHeight = 170 }: LineChartProps) {
+export function LineChart({ data, color, selectedIndex, onSelect, formatTick, plotHeight = 170, stepUnit = 0 }: LineChartProps) {
   const { theme } = useTheme();
   const [width, setWidth] = useState(0);
 
@@ -41,7 +49,8 @@ export function LineChart({ data, color, selectedIndex, onSelect, formatTick, pl
   const max = Math.max(...values);
   // Ticks land on a clean step (75 / 90 / 105, not 70,3 / 87,5 / 104,8), with a
   // step of room past the data at either end when it would otherwise touch the edge.
-  const step = niceMax((max - min || Math.max(1, max * 0.1)) / 2);
+  const rawStep = niceMax((max - min || Math.max(1, max * 0.1)) / 2);
+  const step = stepUnit > 0 ? Math.max(1, Math.ceil(rawStep / stepUnit - 1e-9)) * stepUnit : rawStep;
   let lo = Math.floor(min / step) * step;
   if (lo === min) lo = Math.max(0, lo - step);
   let hi = Math.ceil(max / step) * step;
@@ -50,7 +59,17 @@ export function LineChart({ data, color, selectedIndex, onSelect, formatTick, pl
   for (let tick = lo; tick <= hi + step / 2; tick += step) ticks.push(tick);
 
   const innerWidth = Math.max(0, width - GUTTER - INSET * 2);
-  const x = (i: number) => GUTTER + INSET + (data.length === 1 ? innerWidth / 2 : (i * innerWidth) / (data.length - 1));
+  const timed = data.length > 1 && data.every(d => d.at !== undefined);
+  const firstAt = timed ? data[0].at! : 0;
+  const spanAt = timed ? data[data.length - 1].at! - firstAt : 0;
+  const fraction = (i: number) =>
+    data.length === 1 ? 0.5 : timed && spanAt > 0 ? (data[i].at! - firstAt) / spanAt : i / (data.length - 1);
+  const x = (i: number) => GUTTER + INSET + fraction(i) * innerWidth;
+  // Each point answers from halfway to its neighbours, so the hit areas tile the plot.
+  const hitEdges = data.map((_, i) => ({
+    left: i === 0 ? GUTTER : (x(i - 1) + x(i)) / 2,
+    right: i === data.length - 1 ? width : (x(i) + x(i + 1)) / 2,
+  }));
   const y = (value: number) => INSET + (1 - (value - lo) / (hi - lo)) * (plotHeight - INSET * 2);
 
   const line = data.map((d, i) => `${i === 0 ? 'M' : 'L'}${x(i)},${y(d.value)}`).join('');
@@ -124,11 +143,11 @@ export function LineChart({ data, color, selectedIndex, onSelect, formatTick, pl
         </Svg>
       )}
 
-      <View style={[StyleSheet.absoluteFill, styles.hitRow, { left: GUTTER }]}>
-        {data.map((d, i) => (
+      <View style={StyleSheet.absoluteFill}>
+        {width > 0 && data.map((d, i) => (
           <Pressable
             key={d.key}
-            style={styles.hit}
+            style={[styles.hit, { left: hitEdges[i].left, width: Math.max(0, hitEdges[i].right - hitEdges[i].left) }]}
             onPress={() => onSelect(i)}
             accessibilityRole="button"
             accessibilityLabel={d.description}
@@ -141,6 +160,5 @@ export function LineChart({ data, color, selectedIndex, onSelect, formatTick, pl
 }
 
 const styles = StyleSheet.create({
-  hitRow: { flexDirection: 'row' },
-  hit: { flex: 1 },
+  hit: { position: 'absolute', top: 0, bottom: 0 },
 });

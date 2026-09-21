@@ -1,19 +1,22 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
-import { Meal, UserProfile, Workout, WorkoutSession } from '../types';
+import { Meal, UserProfile, WeightEntry, Workout, WorkoutSession } from '../types';
 import {
   addMeal as addMealToStorage,
   appendSession,
   createId,
   deleteMeal as deleteMealFromStorage,
+  deleteWeight as deleteWeightFromStorage,
   deleteWorkout as deleteWorkoutFromStorage,
   loadActiveSession,
   loadMeals,
   loadProfile,
   loadSessions,
+  loadWeights,
   loadWorkouts,
   saveActiveSession,
   saveProfile,
+  saveWeight,
   saveWorkout as saveWorkoutToStorage,
 } from '../services/storage';
 import { completedSets } from '../utils/workouts';
@@ -51,6 +54,11 @@ interface AppDataContextValue {
   updateSession: (session: WorkoutSession) => Promise<void>;
   finishSession: () => Promise<void>;
   discardSession: () => Promise<void>;
+  /** Weigh-ins, oldest first, at most one per day. */
+  weights: WeightEntry[];
+  /** Logs today's weight, replacing an earlier weigh-in from today. */
+  logWeight: (kg: number) => Promise<void>;
+  deleteWeight: (dateKey: string) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
@@ -61,6 +69,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [activeSession, setActiveSession] = useState<WorkoutSession | null>(null);
+  const [weights, setWeights] = useState<WeightEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [todayKey, setTodayKey] = useState(() => toDateKey(new Date()));
   const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
@@ -69,13 +78,15 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      const [p, m, w, s, active] = await Promise.all([
+      const [p, m, w, s, active, kg] = await Promise.all([
         loadProfile(),
         loadMeals(),
         loadWorkouts(),
         loadSessions(),
         loadActiveSession(),
+        loadWeights(),
       ]);
+      setWeights(kg);
       setProfileState(p);
       setMeals(m);
       setWorkouts(w);
@@ -188,6 +199,15 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const logWeight = useCallback(async (kg: number) => {
+    // Read the clock rather than todayKey, so a weigh-in just after midnight lands on the new day.
+    setWeights(await saveWeight({ dateKey: toDateKey(new Date()), kg }));
+  }, []);
+
+  const deleteWeight = useCallback(async (dateKey: string) => {
+    setWeights(await deleteWeightFromStorage(dateKey));
+  }, []);
+
   const dayMeals = useMemo(() => meals.filter(m => m.dateKey === selectedDateKey), [meals, selectedDateKey]);
 
   const value = useMemo(
@@ -211,6 +231,9 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       updateSession,
       finishSession,
       discardSession,
+      weights,
+      logWeight,
+      deleteWeight,
     }),
     [
       profile,
@@ -231,6 +254,9 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       updateSession,
       finishSession,
       discardSession,
+      weights,
+      logWeight,
+      deleteWeight,
     ]
   );
 

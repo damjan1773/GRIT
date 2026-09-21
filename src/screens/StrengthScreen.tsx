@@ -39,7 +39,6 @@ export function StrengthListScreen({ onBack, onOpen }: { onBack: () => void; onO
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <DetailHeader
         title="Napredak snage"
-        tag="Trening"
         subtitle="Procenjeni maksimum za jedno ponavljanje (1RM), iz završenih treninga."
         onBack={onBack}
       />
@@ -101,7 +100,7 @@ export function ExerciseProgressScreen({ exerciseKey, onBack }: { exerciseKey: s
   if (!history) {
     return (
       <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-        <DetailHeader title="Vežba" tag="Napredak snage" onBack={onBack} />
+        <DetailHeader title="Vežba" onBack={onBack} />
         <Text style={[styles.empty, styles.gapTop]}>Za ovu vežbu nema završenih serija.</Text>
       </ScrollView>
     );
@@ -125,7 +124,7 @@ export function ExerciseProgressScreen({ exerciseKey, onBack }: { exerciseKey: s
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <DetailHeader title={history.name} tag="Napredak snage" onBack={onBack} />
+      <DetailHeader title={history.name} onBack={onBack} />
 
       <Text style={styles.hero}>
         {formatNumber(values[values.length - 1], 1)}

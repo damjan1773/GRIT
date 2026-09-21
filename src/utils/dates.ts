@@ -23,6 +23,12 @@ export function shiftDateKey(key: string, days: number): string {
   return toDateKey(date);
 }
 
+/** Whole days since the epoch — a time axis on which consecutive days are 1 apart. */
+export function dayNumber(key: string): number {
+  const [y, m, d] = key.split('-').map(Number);
+  return Math.round(Date.UTC(y, m - 1, d) / 86_400_000);
+}
+
 export function weekdayShort(key: string): string {
   return WEEKDAYS[dateFromKey(key).getDay()];
 }
