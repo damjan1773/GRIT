@@ -23,6 +23,14 @@ export function shiftDateKey(key: string, days: number): string {
   return toDateKey(date);
 }
 
+/** Greeting for the hour: morning until 11, day until 18, evening after — also through the night. */
+export function greetingFor(date: Date): string {
+  const hour = date.getHours();
+  if (hour >= 5 && hour < 11) return 'Dobro jutro';
+  if (hour >= 11 && hour < 18) return 'Dobar dan';
+  return 'Dobro veče';
+}
+
 /** Whole days since the epoch — a time axis on which consecutive days are 1 apart. */
 export function dayNumber(key: string): number {
   const [y, m, d] = key.split('-').map(Number);

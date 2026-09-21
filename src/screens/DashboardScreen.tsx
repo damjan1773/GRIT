@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, gradientColors, gradientLocations, softGradientColors } from '../theme/colors';
@@ -10,7 +10,7 @@ import { MacroCard } from '../components/MacroCard';
 import { SwipeableRow } from '../components/SwipeableRow';
 import { DayPicker } from '../components/DayPicker';
 import { useAppData } from '../context/AppDataContext';
-import { dayLabel } from '../utils/dates';
+import { dayLabel, greetingFor } from '../utils/dates';
 
 function initialsOf(name: string): string {
   return name
@@ -25,6 +25,13 @@ export function DashboardScreen() {
   const [dayPickerOpen, setDayPickerOpen] = useState(false);
   const styles = useThemedStyles(makeStyles);
   const { theme } = useTheme();
+
+  // The tab stays mounted, so check the clock each minute; an unchanged greeting doesn't re-render.
+  const [greeting, setGreeting] = useState(() => greetingFor(new Date()));
+  useEffect(() => {
+    const timer = setInterval(() => setGreeting(greetingFor(new Date())), 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
   if (!profile) {
     return (
@@ -50,7 +57,7 @@ export function DashboardScreen() {
           <Text style={styles.avatarText}>{initialsOf(profile.name)}</Text>
         </LinearGradient>
         <View style={{ flex: 1 }}>
-          <Text style={styles.greeting}>Dobro jutro,</Text>
+          <Text style={styles.greeting}>{greeting},</Text>
           <Text style={styles.name}>{profile.name}</Text>
         </View>
         <Pressable
