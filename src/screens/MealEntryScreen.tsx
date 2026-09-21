@@ -18,7 +18,6 @@ type ChatMessage =
   | { id: string; kind: 'typing' }
   | { id: string; kind: 'card'; items: MealParseItem[]; pending: boolean; locked: boolean };
 
-const SUGGESTION_CHIPS = ['grčki jogurt i banana', '150g piletine i riža', 'proteinski šejk', 'dve kriške pice'];
 
 let idCounter = 0;
 function nextId(): string {
@@ -136,9 +135,9 @@ export function MealEntryScreen() {
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>Brzi unos</Text>
           {/* Off today, say so loudly — it's where the meal will be saved. */}
-          <Text style={[styles.headerSub, !isToday && { color: colors.mint }]}>
-            {isToday ? 'piši prirodnim jezikom' : `unos ${forDay(selectedDateKey, todayKey)}`}
-          </Text>
+          {!isToday && (
+            <Text style={[styles.headerSub, { color: theme.accent }]}>unos {forDay(selectedDateKey, todayKey)}</Text>
+          )}
         </View>
         <LinearGradient colors={gradientColors} locations={gradientLocations} style={styles.kcalBadge}>
           <Text style={styles.kcalBadgeText}>{Math.round(consumed).toLocaleString('sr-RS')} kcal</Text>
@@ -257,7 +256,7 @@ export function MealEntryScreen() {
                 </>
               ) : (
                 <View style={styles.savedRow}>
-                  <Icon name="check_circle" size={17} color={colors.mint} />
+                  <Icon name="check_circle" size={17} color={theme.accent} />
                   <Text style={styles.savedText}>Sačuvano u dnevnik</Text>
                 </View>
               )}
@@ -267,13 +266,6 @@ export function MealEntryScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
-          {SUGGESTION_CHIPS.map(chip => (
-            <Pressable key={chip} onPress={() => handleSend(chip)} style={styles.chip}>
-              <Text style={styles.chipText}>{chip}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
         <View style={styles.inputRow}>
           <TextInput
             value={input}
@@ -357,7 +349,7 @@ const makeStyles = (t: Theme) =>
     itemMacro: { fontFamily: 'Poppins_400Regular', fontSize: 11, color: t.ink(0.38), marginTop: 2 },
     qtyControls: { flexDirection: 'row', alignItems: 'center', gap: 7 },
     qtyBtn: { width: 28, height: 28, borderRadius: 10, borderWidth: 1, borderColor: t.ink(0.14), alignItems: 'center', justifyContent: 'center' },
-    qtyLabel: { minWidth: 54, textAlign: 'center', fontFamily: 'Poppins_700Bold', fontSize: 11.5, color: colors.mint },
+    qtyLabel: { minWidth: 54, textAlign: 'center', fontFamily: 'Poppins_700Bold', fontSize: 11.5, color: t.accent },
     qtyLabelLocked: { fontFamily: 'Poppins_600SemiBold', fontSize: 11.5, color: t.ink(0.5) },
     itemKcal: { width: 50, textAlign: 'right', fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 13.5, color: t.text },
     totalsRow: { flexDirection: 'row', gap: 7, marginTop: 14 },
@@ -379,11 +371,8 @@ const makeStyles = (t: Theme) =>
     },
     hint: { fontFamily: 'Poppins_400Regular', fontSize: 10.5, lineHeight: 16, color: t.ink(0.3), marginTop: 10, textAlign: 'center' },
     savedRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 13 },
-    savedText: { fontFamily: 'Poppins_700Bold', fontSize: 12, color: colors.mint },
+    savedText: { fontFamily: 'Poppins_700Bold', fontSize: 12, color: t.accent },
     footer: { borderTopWidth: 1, borderTopColor: t.ink(0.06), paddingTop: 12, paddingBottom: 10, paddingHorizontal: 18 },
-    chipsRow: { gap: 8, paddingBottom: 11 },
-    chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 99, borderWidth: 1, borderColor: t.ink(0.13) },
-    chipText: { fontFamily: 'Poppins_500Medium', fontSize: 11.5, color: t.ink(0.68) },
     inputRow: {
       flexDirection: 'row',
       alignItems: 'center',

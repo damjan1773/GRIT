@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, gradientColors, gradientLocations, softGradientColors } from '../theme/colors';
 import { Theme } from '../theme/theme';
-import { useThemedStyles } from '../theme/ThemeContext';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { Icon } from '../components/Icon';
 import { ProgressRing } from '../components/ProgressRing';
 import { MacroCard } from '../components/MacroCard';
@@ -24,6 +24,7 @@ export function DashboardScreen() {
   const { profile, todayKey, selectedDateKey, setSelectedDateKey, dayMeals, deleteMeal } = useAppData();
   const [dayPickerOpen, setDayPickerOpen] = useState(false);
   const styles = useThemedStyles(makeStyles);
+  const { theme } = useTheme();
 
   if (!profile) {
     return (
@@ -84,7 +85,7 @@ export function DashboardScreen() {
               <Text style={styles.consumedValue}>{Math.round(consumed.k).toLocaleString('sr-RS')}</Text>
               <Text style={styles.consumedSub}>od {target.toLocaleString('sr-RS')} kcal</Text>
               <View style={styles.remainingPill}>
-                <Icon name="local_fire_department" size={14} color={colors.mint} />
+                <Icon name="local_fire_department" size={14} color={theme.accent} />
                 <Text style={styles.remainingText}>{Math.round(remaining).toLocaleString('sr-RS')} kcal preostalo</Text>
               </View>
             </View>
@@ -109,7 +110,7 @@ export function DashboardScreen() {
           <SwipeableRow key={meal.id} onDelete={() => deleteMeal(meal.id)}>
             <View style={styles.mealRow}>
               <View style={styles.mealIconWrap}>
-                <Icon name="restaurant" size={19} color={colors.mint} />
+                <Icon name="restaurant" size={19} color={theme.accent} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.mealName} numberOfLines={1}>
@@ -149,7 +150,7 @@ const makeStyles = (t: Theme) =>
     ringHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
     ringTitle: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 16, color: t.text },
     dayPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99, backgroundColor: 'rgba(143,233,206,0.13)' },
-    dayPillText: { fontFamily: 'Poppins_700Bold', fontSize: 11, color: colors.mint },
+    dayPillText: { fontFamily: 'Poppins_700Bold', fontSize: 11, color: t.accent },
     ringWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 4 },
     consumedValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 50, color: t.text },
     consumedSub: { fontFamily: 'Poppins_500Medium', fontSize: 12, color: t.ink(0.45), marginTop: 5 },
@@ -163,7 +164,7 @@ const makeStyles = (t: Theme) =>
       borderRadius: 99,
       backgroundColor: 'rgba(143,233,206,0.13)',
     },
-    remainingText: { fontFamily: 'Poppins_700Bold', fontSize: 11, color: colors.mint },
+    remainingText: { fontFamily: 'Poppins_700Bold', fontSize: 11, color: t.accent },
     macroRow: { flexDirection: 'row', gap: 9, marginTop: 12 },
     sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 28, marginBottom: 12 },
     sectionTitle: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 18, color: t.text },
