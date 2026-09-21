@@ -191,7 +191,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       if (!current) return null;
       // A session with nothing ticked would only add noise to the history.
       if (completedSets(current) > 0) {
-        const finished = { ...current, finishedAt: Date.now(), restEndsAt: null };
+        const finished = { ...current, finishedAt: Date.now(), restEndsAt: null, restStartedAt: null };
         appendSession(finished).then(setSessions);
       }
       saveActiveSession(null);

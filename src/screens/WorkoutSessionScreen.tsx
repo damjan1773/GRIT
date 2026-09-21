@@ -25,10 +25,11 @@ import { formatDuration, formatSet, lastSetsFor, sessionVolume } from '../utils/
 /** How long the "tap again to discard" prompt stays armed. */
 const CONFIRM_WINDOW_MS = 4000;
 
-/** Rest lengths offered between sets, in seconds. */
-const REST_OPTIONS = [60, 90, 120, 180];
+/** Rest timer bounds and step, in seconds. */
+const REST_MIN_SECONDS = 30;
+const REST_MAX_SECONDS = 300;
+const REST_STEP_SECONDS = 30;
 const DEFAULT_REST_SECONDS = 90;
-const REST_NUDGE_SECONDS = 15;
 /** How long "rest over" stays on the tile before it goes back to idle. */
 const REST_DONE_VISIBLE_MS = 8000;
 
@@ -73,7 +74,7 @@ export function WorkoutSessionScreen({ session, onMinimize }: WorkoutSessionScre
     return () => clearInterval(timer);
   }, []);
 
-  const restSeconds = session.restSeconds ?? DEFAULT_REST_SECONDS;
+  const restSeconds = Math.min(REST_MAX_SECONDS, Math.max(REST_MIN_SECONDS, session.restSeconds ?? DEFAULT_REST_SECONDS));
   const restEndsAt = session.restEndsAt ?? null;
   const restLeft = restEndsAt === null ? null : restEndsAt - now;
   const resting = restLeft !== null && restLeft > 0;
@@ -91,25 +92,33 @@ export function WorkoutSessionScreen({ session, onMinimize }: WorkoutSessionScre
 
   useEffect(() => {
     if (restOver && restLeft !== null && -restLeft > REST_DONE_VISIBLE_MS) {
-      updateSession({ ...session, restEndsAt: null });
+      updateSession({ ...session, restEndsAt: null, restStartedAt: null });
     }
   }, [restOver, restLeft, session, updateSession]);
 
-  function startRest(seconds: number) {
+  function startRest() {
     const start = Date.now();
     setNow(start);
-    updateSession({ ...session, restSeconds: seconds, restEndsAt: start + seconds * 1000 });
+    updateSession({ ...session, restSeconds, restStartedAt: start, restEndsAt: start + restSeconds * 1000 });
     setRestPanelOpen(false);
   }
 
-  function nudgeRest(seconds: number) {
-    if (restEndsAt === null) return;
-    // Never below a second left, so a nudge can't end the rest by itself.
-    updateSession({ ...session, restEndsAt: Math.max(Date.now() + 1000, restEndsAt + seconds * 1000) });
+  /** Before a rest this sets its length; during one it moves the end. */
+  function stepRest(direction: 1 | -1) {
+    const delta = direction * REST_STEP_SECONDS;
+    if (resting && restEndsAt !== null) {
+      const current = Date.now();
+      // At least a second left, so a minus can't end the rest by itself; at most the maximum.
+      const endsAt = Math.min(current + REST_MAX_SECONDS * 1000, Math.max(current + 1000, restEndsAt + delta * 1000));
+      updateSession({ ...session, restEndsAt: endsAt });
+      return;
+    }
+    const next = Math.min(REST_MAX_SECONDS, Math.max(REST_MIN_SECONDS, restSeconds + delta));
+    updateSession({ ...session, restSeconds: next });
   }
 
   function stopRest() {
-    updateSession({ ...session, restEndsAt: null });
+    updateSession({ ...session, restEndsAt: null, restStartedAt: null });
     setRestPanelOpen(false);
   }
 
@@ -170,7 +179,9 @@ export function WorkoutSessionScreen({ session, onMinimize }: WorkoutSessionScre
   }
 
   const volume = sessionVolume(session);
-  const restFraction = resting ? Math.min(1, restLeft / (restSeconds * 1000)) : 0;
+  // Measured against the rest's actual length, so a +30 s mid-rest refills the bar.
+  const restTotal = restEndsAt !== null && session.restStartedAt ? restEndsAt - session.restStartedAt : restSeconds * 1000;
+  const restFraction = resting ? Math.min(1, restLeft / restTotal) : 0;
 
   return (
     <KeyboardAvoidingView
@@ -208,11 +219,7 @@ export function WorkoutSessionScreen({ session, onMinimize }: WorkoutSessionScre
           ]}
           accessibilityRole="button"
           accessibilityLabel={
-            resting
-              ? `Odmor, još ${countdown(restLeft)}. Dodirni za izmenu.`
-              : restOver
-                ? 'Odmor je gotov'
-                : 'Tajmer za odmor između serija'
+            resting ? `Tajmer, još ${countdown(restLeft)}. Dodirni za izmenu.` : restOver ? 'Tajmer je istekao' : 'Tajmer'
           }
         >
           <View style={styles.restValueRow}>
@@ -221,7 +228,7 @@ export function WorkoutSessionScreen({ session, onMinimize }: WorkoutSessionScre
               {resting ? countdown(restLeft) : restOver ? 'Kreni!' : countdown(restSeconds * 1000)}
             </Text>
           </View>
-          <Text style={styles.statLabel}>{restOver ? 'ODMOR GOTOV' : 'ODMOR'}</Text>
+          <Text style={styles.statLabel}>TIMER</Text>
           {resting && (
             <View style={styles.restTrack}>
               <View style={[styles.restFill, { width: `${restFraction * 100}%` }]} />
@@ -232,37 +239,41 @@ export function WorkoutSessionScreen({ session, onMinimize }: WorkoutSessionScre
 
       {restPanelOpen && (
         <View style={styles.restPanel}>
-          <Text style={styles.restPanelTitle}>{resting ? 'Odmor u toku' : 'Koliko odmaraš?'}</Text>
-          <View style={styles.restOptions}>
-            {REST_OPTIONS.map(seconds => {
-              const picked = seconds === restSeconds;
-              return (
-                <Pressable
-                  key={seconds}
-                  onPress={() => startRest(seconds)}
-                  style={[styles.restOption, picked && styles.restOptionPicked]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Odmor ${countdown(seconds * 1000)}${resting ? ', počni ponovo' : ''}`}
-                >
-                  <Text style={[styles.restOptionText, picked && styles.restOptionTextPicked]}>
-                    {countdown(seconds * 1000)}
-                  </Text>
-                </Pressable>
-              );
-            })}
+          <View style={styles.restStepper}>
+            <Pressable
+              onPress={() => stepRest(-1)}
+              disabled={!resting && restSeconds <= REST_MIN_SECONDS}
+              style={({ pressed }) => [
+                styles.restStepBtn,
+                !resting && restSeconds <= REST_MIN_SECONDS && styles.restStepBtnOff,
+                pressed && { opacity: 0.7 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Manje 30 sekundi"
+            >
+              <Icon name="remove" size={20} color={theme.text} />
+            </Pressable>
+            <Text style={styles.restStepValue}>{resting ? countdown(restLeft) : countdown(restSeconds * 1000)}</Text>
+            <Pressable
+              onPress={() => stepRest(1)}
+              disabled={!resting && restSeconds >= REST_MAX_SECONDS}
+              style={({ pressed }) => [
+                styles.restStepBtn,
+                !resting && restSeconds >= REST_MAX_SECONDS && styles.restStepBtnOff,
+                pressed && { opacity: 0.7 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Više 30 sekundi"
+            >
+              <Icon name="add" size={20} color={theme.text} />
+            </Pressable>
           </View>
-          {resting && (
-            <View style={styles.restActions}>
-              <Pressable onPress={() => nudgeRest(-REST_NUDGE_SECONDS)} style={styles.smallBtn} accessibilityRole="button">
-                <Text style={styles.smallBtnText}>−15 s</Text>
-              </Pressable>
-              <Pressable onPress={() => nudgeRest(REST_NUDGE_SECONDS)} style={styles.smallBtn} accessibilityRole="button">
-                <Text style={styles.smallBtnText}>+15 s</Text>
-              </Pressable>
-              <Pressable onPress={stopRest} style={[styles.smallBtn, styles.restStop]} accessibilityRole="button">
-                <Text style={styles.smallBtnText}>Prekini</Text>
-              </Pressable>
-            </View>
+          {resting ? (
+            <Pressable onPress={stopRest} style={styles.restStopBtn} accessibilityRole="button">
+              <Text style={styles.restStopText}>Prekini</Text>
+            </Pressable>
+          ) : (
+            <GradientButton label="Pokreni" onPress={startRest} height={46} />
           )}
         </View>
       )}
@@ -465,22 +476,34 @@ const makeStyles = (t: Theme) =>
       borderWidth: 1,
       borderColor: t.ink(0.07),
     },
-    restPanelTitle: { fontFamily: 'Poppins_700Bold', fontSize: 13, color: t.text },
-    restOptions: { flexDirection: 'row', gap: 8 },
-    restOption: {
-      flex: 1,
-      height: 42,
-      borderRadius: 14,
+    restStepper: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    restStepBtn: {
+      width: 46,
+      height: 46,
+      borderRadius: 16,
       borderWidth: 1,
-      borderColor: t.ink(0.13),
+      borderColor: t.ink(0.12),
       alignItems: 'center',
       justifyContent: 'center',
     },
-    restOptionPicked: { backgroundColor: colors.mint, borderColor: colors.mint },
-    restOptionText: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 15, color: t.text },
-    restOptionTextPicked: { color: '#101012' },
-    restActions: { flexDirection: 'row', gap: 8 },
-    restStop: { marginLeft: 'auto' },
+    restStepBtnOff: { opacity: 0.3 },
+    restStepValue: {
+      flex: 1,
+      textAlign: 'center',
+      fontFamily: 'Poppins_900Black_Italic',
+      fontSize: 38,
+      color: t.text,
+      letterSpacing: -0.5,
+    },
+    restStopBtn: {
+      height: 46,
+      borderRadius: 23,
+      borderWidth: 1,
+      borderColor: t.ink(0.15),
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    restStopText: { fontFamily: 'Poppins_700Bold', fontSize: 14, color: t.text },
     body: { flex: 1 },
     bodyContent: { paddingHorizontal: 16, paddingBottom: 24, gap: 10 },
     exerciseCard: { backgroundColor: t.surface, borderWidth: 1, borderColor: t.ink(0.07), borderRadius: 22, padding: 12 },

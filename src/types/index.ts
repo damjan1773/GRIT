@@ -84,6 +84,8 @@ export interface WorkoutSession {
   exercises: SessionExercise[];
   /** When the running rest timer runs out; null or absent when no rest is on. */
   restEndsAt?: number | null;
+  /** When the running rest timer started — its full length, for the draining bar. */
+  restStartedAt?: number | null;
   /** Last rest length picked, in seconds — offered first next time. */
   restSeconds?: number;
 }
