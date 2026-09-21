@@ -82,6 +82,10 @@ export interface WorkoutSession {
   /** Null while the session is running. */
   finishedAt: number | null;
   exercises: SessionExercise[];
+  /** When the running rest timer runs out; null or absent when no rest is on. */
+  restEndsAt?: number | null;
+  /** Last rest length picked, in seconds — offered first next time. */
+  restSeconds?: number;
 }
 
 /** One weigh-in per day; logging again the same day replaces it. */

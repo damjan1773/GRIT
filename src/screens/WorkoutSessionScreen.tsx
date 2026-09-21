@@ -1,5 +1,15 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  Vibration,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { Theme, whiteChipEdge } from '../theme/theme';
@@ -10,10 +20,23 @@ import { useAppData } from '../context/AppDataContext';
 import { COMMON_EXERCISES } from '../data/commonExercises';
 import { createId } from '../services/storage';
 import { SessionExercise, SessionSet, WorkoutSession } from '../types';
-import { completedSets, formatDuration, formatSet, lastSetsFor, sessionVolume } from '../utils/workouts';
+import { formatDuration, formatSet, lastSetsFor, sessionVolume } from '../utils/workouts';
 
 /** How long the "tap again to discard" prompt stays armed. */
 const CONFIRM_WINDOW_MS = 4000;
+
+/** Rest lengths offered between sets, in seconds. */
+const REST_OPTIONS = [60, 90, 120, 180];
+const DEFAULT_REST_SECONDS = 90;
+const REST_NUDGE_SECONDS = 15;
+/** How long "rest over" stays on the tile before it goes back to idle. */
+const REST_DONE_VISIBLE_MS = 8000;
+
+/** "1:30" — a countdown always shows minutes, and rounds up so it never sits on 0:00 early. */
+function countdown(ms: number): string {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
 
 interface WorkoutSessionScreenProps {
   session: WorkoutSession;
@@ -41,12 +64,54 @@ export function WorkoutSessionScreen({ session, onMinimize }: WorkoutSessionScre
   const [addingExercise, setAddingExercise] = useState(false);
   const [newExerciseName, setNewExerciseName] = useState('');
   const [confirmingDiscard, setConfirmingDiscard] = useState(false);
+  const [restPanelOpen, setRestPanelOpen] = useState(false);
 
-  // Derived from the start time, so the clock stays right after the app is backgrounded.
+  // Both clocks are derived from timestamps, so they stay right after the app is
+  // backgrounded. Half-second ticks keep the countdown from skipping a second.
   useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 1000);
+    const timer = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(timer);
   }, []);
+
+  const restSeconds = session.restSeconds ?? DEFAULT_REST_SECONDS;
+  const restEndsAt = session.restEndsAt ?? null;
+  const restLeft = restEndsAt === null ? null : restEndsAt - now;
+  const resting = restLeft !== null && restLeft > 0;
+  const restOver = restLeft !== null && restLeft <= 0;
+
+  // One buzz when the rest runs out — but not for a rest that ended long ago,
+  // e.g. while the app was closed.
+  const buzzedFor = useRef<number | null>(null);
+  useEffect(() => {
+    if (!restOver || restEndsAt === null || buzzedFor.current === restEndsAt) return;
+    buzzedFor.current = restEndsAt;
+    setRestPanelOpen(false);
+    if (Date.now() - restEndsAt < 3000) Vibration.vibrate([0, 400, 200, 400]);
+  }, [restOver, restEndsAt]);
+
+  useEffect(() => {
+    if (restOver && restLeft !== null && -restLeft > REST_DONE_VISIBLE_MS) {
+      updateSession({ ...session, restEndsAt: null });
+    }
+  }, [restOver, restLeft, session, updateSession]);
+
+  function startRest(seconds: number) {
+    const start = Date.now();
+    setNow(start);
+    updateSession({ ...session, restSeconds: seconds, restEndsAt: start + seconds * 1000 });
+    setRestPanelOpen(false);
+  }
+
+  function nudgeRest(seconds: number) {
+    if (restEndsAt === null) return;
+    // Never below a second left, so a nudge can't end the rest by itself.
+    updateSession({ ...session, restEndsAt: Math.max(Date.now() + 1000, restEndsAt + seconds * 1000) });
+  }
+
+  function stopRest() {
+    updateSession({ ...session, restEndsAt: null });
+    setRestPanelOpen(false);
+  }
 
   useEffect(() => {
     if (!confirmingDiscard) return;
@@ -105,7 +170,7 @@ export function WorkoutSessionScreen({ session, onMinimize }: WorkoutSessionScre
   }
 
   const volume = sessionVolume(session);
-  const doneSets = completedSets(session);
+  const restFraction = resting ? Math.min(1, restLeft / (restSeconds * 1000)) : 0;
 
   return (
     <KeyboardAvoidingView
@@ -134,11 +199,73 @@ export function WorkoutSessionScreen({ session, onMinimize }: WorkoutSessionScre
           <Text style={styles.statValue}>{Math.round(volume).toLocaleString('sr-RS')}</Text>
           <Text style={styles.statLabel}>KG VOLUMEN</Text>
         </View>
-        <View style={[styles.statBox, { backgroundColor: colors.white }, whiteChipEdge(theme)]}>
-          <Text style={styles.statValue}>{doneSets}</Text>
-          <Text style={styles.statLabel}>SERIJE</Text>
-        </View>
+        <Pressable
+          onPress={() => (restOver ? stopRest() : setRestPanelOpen(open => !open))}
+          style={[
+            styles.statBox,
+            styles.restBox,
+            restOver ? { backgroundColor: colors.mint } : [{ backgroundColor: colors.white }, whiteChipEdge(theme)],
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={
+            resting
+              ? `Odmor, još ${countdown(restLeft)}. Dodirni za izmenu.`
+              : restOver
+                ? 'Odmor je gotov'
+                : 'Tajmer za odmor između serija'
+          }
+        >
+          <View style={styles.restValueRow}>
+            {!resting && !restOver && <Icon name="timer" size={16} color="#101012" />}
+            <Text style={styles.statValue}>
+              {resting ? countdown(restLeft) : restOver ? 'Kreni!' : countdown(restSeconds * 1000)}
+            </Text>
+          </View>
+          <Text style={styles.statLabel}>{restOver ? 'ODMOR GOTOV' : 'ODMOR'}</Text>
+          {resting && (
+            <View style={styles.restTrack}>
+              <View style={[styles.restFill, { width: `${restFraction * 100}%` }]} />
+            </View>
+          )}
+        </Pressable>
       </View>
+
+      {restPanelOpen && (
+        <View style={styles.restPanel}>
+          <Text style={styles.restPanelTitle}>{resting ? 'Odmor u toku' : 'Koliko odmaraš?'}</Text>
+          <View style={styles.restOptions}>
+            {REST_OPTIONS.map(seconds => {
+              const picked = seconds === restSeconds;
+              return (
+                <Pressable
+                  key={seconds}
+                  onPress={() => startRest(seconds)}
+                  style={[styles.restOption, picked && styles.restOptionPicked]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Odmor ${countdown(seconds * 1000)}${resting ? ', počni ponovo' : ''}`}
+                >
+                  <Text style={[styles.restOptionText, picked && styles.restOptionTextPicked]}>
+                    {countdown(seconds * 1000)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          {resting && (
+            <View style={styles.restActions}>
+              <Pressable onPress={() => nudgeRest(-REST_NUDGE_SECONDS)} style={styles.smallBtn} accessibilityRole="button">
+                <Text style={styles.smallBtnText}>−15 s</Text>
+              </Pressable>
+              <Pressable onPress={() => nudgeRest(REST_NUDGE_SECONDS)} style={styles.smallBtn} accessibilityRole="button">
+                <Text style={styles.smallBtnText}>+15 s</Text>
+              </Pressable>
+              <Pressable onPress={stopRest} style={[styles.smallBtn, styles.restStop]} accessibilityRole="button">
+                <Text style={styles.smallBtnText}>Prekini</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+      )}
 
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} keyboardShouldPersistTaps="handled">
         {session.exercises.map(exercise => (
@@ -323,6 +450,37 @@ const makeStyles = (t: Theme) =>
     statBox: { flex: 1, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 18 },
     statValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 19, color: '#101012' },
     statLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 8.5, letterSpacing: 1, color: '#101012', opacity: 0.6, marginTop: 3 },
+    restBox: { overflow: 'hidden' },
+    restValueRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    // Drains as the rest runs down, along the tile's bottom edge.
+    restTrack: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 4, backgroundColor: 'rgba(16,16,18,0.1)' },
+    restFill: { height: '100%', backgroundColor: 'rgba(16,16,18,0.55)' },
+    restPanel: {
+      marginHorizontal: 16,
+      marginBottom: 14,
+      padding: 14,
+      gap: 10,
+      borderRadius: 22,
+      backgroundColor: t.surface,
+      borderWidth: 1,
+      borderColor: t.ink(0.07),
+    },
+    restPanelTitle: { fontFamily: 'Poppins_700Bold', fontSize: 13, color: t.text },
+    restOptions: { flexDirection: 'row', gap: 8 },
+    restOption: {
+      flex: 1,
+      height: 42,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: t.ink(0.13),
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    restOptionPicked: { backgroundColor: colors.mint, borderColor: colors.mint },
+    restOptionText: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 15, color: t.text },
+    restOptionTextPicked: { color: '#101012' },
+    restActions: { flexDirection: 'row', gap: 8 },
+    restStop: { marginLeft: 'auto' },
     body: { flex: 1 },
     bodyContent: { paddingHorizontal: 16, paddingBottom: 24, gap: 10 },
     exerciseCard: { backgroundColor: t.surface, borderWidth: 1, borderColor: t.ink(0.07), borderRadius: 22, padding: 12 },
