@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,12 +15,16 @@ const TAB_ICON: Record<string, string> = {
   Training: 'fitness_center',
 };
 
-export function BottomNav({ state, navigation }: BottomTabBarProps) {
+export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { profile } = useAppData();
-  const activeRouteName = state.routes[state.index].name;
-  // Hidden only during first-time onboarding, so the setup flow stays focused.
-  if (activeRouteName === 'Profile' && !profile) return null;
+  const activeRoute = state.routes[state.index];
+  // Hidden during first-time onboarding, so the setup flow stays focused.
+  if (activeRoute.name === 'Profile' && !profile) return null;
+  // A screen can ask for the whole screen, as a running workout does. Screens
+  // here only ever set a plain style, never an animated one.
+  const requested = descriptors[activeRoute.key]?.options.tabBarStyle as StyleProp<ViewStyle>;
+  if (StyleSheet.flatten(requested)?.display === 'none') return null;
 
   // The bar's rounded bottom corners already clear the home indicator, so only
   // a sliver of the safe-area inset is needed — the full inset leaves a dead

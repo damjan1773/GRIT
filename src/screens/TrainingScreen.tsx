@@ -35,6 +35,12 @@ export function TrainingScreen() {
     [navigation]
   );
 
+  // A running workout takes the whole screen; its own footer is the way out.
+  const sessionVisible = view.kind === 'session' && !!activeSession;
+  useEffect(() => {
+    navigation.setOptions({ tabBarStyle: sessionVisible ? { display: 'none' } : undefined });
+  }, [navigation, sessionVisible]);
+
   const findWorkout = (id?: string): Workout | undefined =>
     id ? [...workouts, ...BUILT_IN_WORKOUTS].find(w => w.id === id) : undefined;
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { Theme, whiteChipEdge } from '../theme/theme';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
@@ -34,6 +35,7 @@ function parseNumber(text: string): number | null {
 export function WorkoutSessionScreen({ session, onMinimize }: WorkoutSessionScreenProps) {
   const { theme } = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const insets = useSafeAreaInsets();
   const { sessions, updateSession, finishSession, discardSession } = useAppData();
   const [now, setNow] = useState(Date.now());
   const [addingExercise, setAddingExercise] = useState(false);
@@ -277,17 +279,27 @@ export function WorkoutSessionScreen({ session, onMinimize }: WorkoutSessionScre
         )}
       </ScrollView>
 
-      <View style={styles.footer}>
-        <GradientButton label="Zaustavi trening" onPress={finishSession} />
-        <Pressable
-          onPress={() => (confirmingDiscard ? discardSession() : setConfirmingDiscard(true))}
-          style={styles.discardBtn}
-          accessibilityRole="button"
-        >
-          <Text style={styles.discardText}>
-            {confirmingDiscard ? 'Dodirni ponovo da odbaciš trening' : 'Odbaci trening'}
-          </Text>
-        </Pressable>
+      {/* With the tab bar hidden, the footer sits on the home indicator — clear it. */}
+      <View style={[styles.footer, { paddingBottom: 12 + insets.bottom }]}>
+        <GradientButton label="Završi trening" onPress={finishSession} style={styles.finishBtn} />
+        <View>
+          {confirmingDiscard && (
+            // Floats above the button, so arming it doesn't shift the layout.
+            <View style={styles.discardHint} pointerEvents="none">
+              <Text style={styles.discardHintText} numberOfLines={1}>
+                Dodirni ponovo
+              </Text>
+            </View>
+          )}
+          <Pressable
+            onPress={() => (confirmingDiscard ? discardSession() : setConfirmingDiscard(true))}
+            style={[styles.discardBtn, confirmingDiscard && styles.discardBtnArmed]}
+            accessibilityRole="button"
+            accessibilityLabel={confirmingDiscard ? 'Potvrdi: odbaci trening' : 'Odbaci trening'}
+          >
+            <Icon name="delete_outline" size={22} color={confirmingDiscard ? '#101012' : '#FF6B6B'} />
+          </Pressable>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -406,7 +418,37 @@ const makeStyles = (t: Theme) =>
     },
     chipText: { fontFamily: 'Poppins_500Medium', fontSize: 11.5, color: t.ink(0.75) },
     addActions: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end' },
-    footer: { borderTopWidth: 1, borderTopColor: t.ink(0.06), paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },
-    discardBtn: { alignItems: 'center', paddingVertical: 10 },
-    discardText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: '#FF6B6B' },
+    footer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      borderTopWidth: 1,
+      borderTopColor: t.ink(0.06),
+      paddingHorizontal: 16,
+      paddingTop: 12,
+    },
+    finishBtn: { flex: 1 },
+    discardBtn: {
+      width: 58,
+      height: 58,
+      borderRadius: 29,
+      borderWidth: 1.5,
+      borderColor: 'rgba(255,107,107,0.55)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    discardBtnArmed: { backgroundColor: '#FF6B6B', borderColor: '#FF6B6B' },
+    discardHint: {
+      position: 'absolute',
+      bottom: 66,
+      right: 0,
+      // Its own width: otherwise it is squeezed to the button's 58px and wraps.
+      width: 120,
+      alignItems: 'center',
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 99,
+      backgroundColor: '#FF6B6B',
+    },
+    discardHintText: { fontFamily: 'Poppins_700Bold', fontSize: 11, color: '#101012' },
   });
