@@ -33,6 +33,8 @@ interface AppDataContextValue {
   setSelectedDateKey: (dateKey: string) => void;
   /** Meals logged to the selected day. */
   dayMeals: Meal[];
+  /** Every meal ever logged — for statistics across days. */
+  meals: Meal[];
   loading: boolean;
   setProfile: (profile: UserProfile) => Promise<void>;
   addMeal: (meal: Meal) => Promise<void>;
@@ -195,6 +197,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       selectedDateKey,
       setSelectedDateKey,
       dayMeals,
+      meals,
       loading,
       setProfile,
       addMeal,
@@ -214,6 +217,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       todayKey,
       selectedDateKey,
       dayMeals,
+      meals,
       loading,
       setProfile,
       addMeal,

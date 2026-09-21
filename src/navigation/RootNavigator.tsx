@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ProfileTabScreen } from '../screens/ProfileTabScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { MealEntryScreen } from '../screens/MealEntryScreen';
-import { ComingSoonScreen } from '../screens/ComingSoonScreen';
+import { StatsScreen } from '../screens/StatsScreen';
 import { TrainingScreen } from '../screens/TrainingScreen';
 import { BottomNav } from '../components/BottomNav';
 import { useAppData } from '../context/AppDataContext';
@@ -26,7 +26,7 @@ export function RootNavigator() {
         <Tab.Screen name="Profile" component={ProfileTabScreen} />
         <Tab.Screen name="Dashboard" component={DashboardScreen} />
         <Tab.Screen name="MealEntry" component={MealEntryScreen} />
-        <Tab.Screen name="Stats">{() => <ComingSoonScreen label="Statistika" icon="bar_chart" />}</Tab.Screen>
+        <Tab.Screen name="Stats" component={StatsScreen} />
         <Tab.Screen name="Training" component={TrainingScreen} />
       </Tab.Navigator>
     </View>

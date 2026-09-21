@@ -31,6 +31,12 @@ export function dayOfMonth(key: string): number {
   return dateFromKey(key).getDate();
 }
 
+/** "8.9." — compact, for chart axes. */
+export function shortDate(key: string): string {
+  const date = dateFromKey(key);
+  return `${date.getDate()}.${date.getMonth() + 1}.`;
+}
+
 /** "Danas", "Juče", "Sutra", or e.g. "Pon 8.9." */
 export function dayLabel(key: string, todayKey: string): string {
   if (key === todayKey) return 'Danas';
