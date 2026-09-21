@@ -1,3 +1,5 @@
+import { chartColors, colors } from './colors';
+
 export type ThemeMode = 'dark' | 'light';
 
 /**
@@ -15,6 +17,12 @@ export interface Theme {
   text: string;
   /** The text colour at an opacity: secondary text, hairlines, tracks. */
   ink: (alpha: number) => string;
+  /**
+   * Mint as an icon or text colour on the page or a card. The brand mint is
+   * nearly invisible on white, so the light theme uses the darker chart step.
+   * Mint as a fill (macro boxes, gradients) stays the brand mint in both themes.
+   */
+  accent: string;
   statusBar: 'light' | 'dark';
 }
 
@@ -24,6 +32,7 @@ export const darkTheme: Theme = {
   surface: '#17171A',
   text: '#ffffff',
   ink: alpha => `rgba(255,255,255,${alpha})`,
+  accent: colors.mint,
   statusBar: 'light',
 };
 
@@ -34,6 +43,7 @@ export const lightTheme: Theme = {
   surface: '#F2F2F5',
   text: '#0a0a0b',
   ink: alpha => `rgba(10,10,11,${alpha})`,
+  accent: chartColors.nutrition,
   statusBar: 'dark',
 };
 

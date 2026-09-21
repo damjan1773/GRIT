@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { colors, softGradientColors } from '../theme/colors';
+import { softGradientColors } from '../theme/colors';
 import { Theme } from '../theme/theme';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { Icon } from '../components/Icon';
@@ -185,7 +185,7 @@ export function WorkoutBuilderScreen({ base, onCancel, onSave }: WorkoutBuilderS
         <View style={styles.chips}>
           {QUICK_ADD.map(preset => (
             <Pressable key={preset.name} onPress={() => add(preset)} style={styles.chip} accessibilityRole="button">
-              <Icon name="add" size={14} color={colors.mint} />
+              <Icon name="add" size={14} color={theme.accent} />
               <Text style={styles.chipText}>{preset.name}</Text>
             </Pressable>
           ))}
@@ -222,7 +222,7 @@ function MiniStepper({ label, value, onChange, onLabelPress }: MiniStepperProps)
           accessibilityLabel="Promeni ponavljanja ili sekunde"
         >
           {labelText}
-          <Icon name="swap_horiz" size={13} color={colors.mint} />
+          <Icon name="swap_horiz" size={13} color={theme.accent} />
         </Pressable>
       ) : (
         <View style={styles.stepperLabelRow}>{labelText}</View>
@@ -283,7 +283,7 @@ const makeStyles = (t: Theme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    exIndexText: { fontFamily: 'Poppins_700Bold', fontSize: 12, color: colors.mint },
+    exIndexText: { fontFamily: 'Poppins_700Bold', fontSize: 12, color: t.accent },
     exNameInput: { flex: 1, minWidth: 0, color: t.text, fontFamily: 'Poppins_600SemiBold', fontSize: 14, paddingVertical: 6 },
     removeBtn: { width: 28, height: 28, borderRadius: 10, backgroundColor: t.ink(0.06), alignItems: 'center', justifyContent: 'center' },
     exBottom: { flexDirection: 'row', gap: 10 },

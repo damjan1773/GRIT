@@ -181,7 +181,7 @@ function WorkoutCard({ workout, onPress }: { workout: Workout; onPress: () => vo
   return (
     <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}>
       <View style={styles.cardIcon}>
-        <Icon name={workoutIcon(workout)} size={20} color={colors.mint} />
+        <Icon name={workoutIcon(workout)} size={20} color={theme.accent} />
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={styles.cardName} numberOfLines={1}>
@@ -245,7 +245,7 @@ const makeStyles = (t: Theme) =>
     cardName: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: t.text },
     cardMeta: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: t.ink(0.45), marginTop: 2 },
     tagPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, backgroundColor: 'rgba(143,233,206,0.13)' },
-    tagText: { fontFamily: 'Poppins_600SemiBold', fontSize: 10, color: colors.mint },
+    tagText: { fontFamily: 'Poppins_600SemiBold', fontSize: 10, color: t.accent },
     resumeCard: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -260,6 +260,6 @@ const makeStyles = (t: Theme) =>
     },
     resumeDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.mint },
     resumeTitle: { fontFamily: 'Poppins_700Bold', fontSize: 13.5, color: t.text },
-    resumeSub: { fontFamily: 'Poppins_500Medium', fontSize: 11, color: colors.mint, marginTop: 1 },
+    resumeSub: { fontFamily: 'Poppins_500Medium', fontSize: 11, color: t.accent, marginTop: 1 },
     resumeTime: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 15, color: t.text },
   });

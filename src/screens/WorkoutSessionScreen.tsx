@@ -249,7 +249,7 @@ export function WorkoutSessionScreen({ session, onMinimize }: WorkoutSessionScre
             <View style={styles.chips}>
               {COMMON_EXERCISES.map(preset => (
                 <Pressable key={preset.name} onPress={() => addExercise(preset.name)} style={styles.chip} accessibilityRole="button">
-                  <Icon name="add" size={13} color={colors.mint} />
+                  <Icon name="add" size={13} color={theme.accent} />
                   <Text style={styles.chipText}>{preset.name}</Text>
                 </Pressable>
               ))}
@@ -266,7 +266,7 @@ export function WorkoutSessionScreen({ session, onMinimize }: WorkoutSessionScre
                 <Text style={styles.smallBtnText}>Otkaži</Text>
               </Pressable>
               <Pressable onPress={() => addExercise(newExerciseName)} style={styles.smallBtn} accessibilityRole="button">
-                <Icon name="check" size={15} color={colors.mint} />
+                <Icon name="check" size={15} color={theme.accent} />
                 <Text style={styles.smallBtnText}>Dodaj</Text>
               </Pressable>
             </View>
@@ -318,7 +318,7 @@ const makeStyles = (t: Theme) =>
     },
     backBtn: { width: 38, height: 38, borderRadius: 13, borderWidth: 1, borderColor: t.ink(0.12), alignItems: 'center', justifyContent: 'center' },
     headerTitle: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 17, color: t.text },
-    headerSub: { fontFamily: 'Poppins_500Medium', fontSize: 11.5, color: colors.mint, marginTop: 1 },
+    headerSub: { fontFamily: 'Poppins_500Medium', fontSize: 11.5, color: t.accent, marginTop: 1 },
     statsRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 14 },
     statBox: { flex: 1, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 18 },
     statValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 19, color: '#101012' },

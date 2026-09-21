@@ -27,11 +27,12 @@ interface DetailRowProps {
 }
 
 function DetailRow({ icon, label, value, note, first }: DetailRowProps) {
+  const { theme } = useTheme();
   const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.row, first && styles.rowFirst]}>
       <View style={styles.rowIcon}>
-        <Icon name={icon} size={18} color={colors.mint} />
+        <Icon name={icon} size={18} color={theme.accent} />
       </View>
       <Text style={styles.rowLabel}>{label}</Text>
       <View style={styles.rowValueWrap}>
@@ -50,14 +51,14 @@ function ThemeRow() {
   return (
     <View style={styles.row}>
       <View style={styles.rowIcon}>
-        <Icon name={isLight ? 'light_mode' : 'dark_mode'} size={18} color={colors.mint} />
+        <Icon name={isLight ? 'light_mode' : 'dark_mode'} size={18} color={theme.accent} />
       </View>
       <Text style={styles.rowLabel}>Tema</Text>
       <Text style={styles.rowNote}>{isLight ? 'Svetla' : 'Tamna'}</Text>
       <Switch
         value={isLight}
         onValueChange={on => setMode(on ? 'light' : 'dark')}
-        trackColor={{ false: theme.ink(0.16), true: colors.mint }}
+        trackColor={{ false: theme.ink(0.16), true: theme.accent }}
         thumbColor="#ffffff"
         ios_backgroundColor={theme.ink(0.16)}
         accessibilityLabel="Svetla tema"
@@ -151,7 +152,7 @@ const makeStyles = (t: Theme) =>
       padding: 20,
       alignItems: 'center',
     },
-    goalBadge: { fontFamily: 'Poppins_600SemiBold', fontSize: 10.5, letterSpacing: 2, color: colors.mint },
+    goalBadge: { fontFamily: 'Poppins_600SemiBold', fontSize: 10.5, letterSpacing: 2, color: t.accent },
     goalValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 52, color: t.text, marginTop: 8, letterSpacing: -1 },
     goalSub: { fontFamily: 'Poppins_500Medium', fontSize: 12.5, color: t.ink(0.45), marginTop: 2 },
     macroRow: { flexDirection: 'row', gap: 8, marginTop: 20, alignSelf: 'stretch' },
