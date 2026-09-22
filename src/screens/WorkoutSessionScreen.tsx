@@ -222,6 +222,8 @@ export function WorkoutSessionScreen({ session, onMinimize }: WorkoutSessionScre
             resting ? `Tajmer, još ${countdown(restLeft)}. Dodirni za izmenu.` : restOver ? 'Tajmer je istekao' : 'Tajmer'
           }
         >
+          {/* First child, so the time is drawn on top of it. */}
+          {resting && <View style={[styles.restFill, { width: `${(1 - restFraction) * 100}%` }]} />}
           <View style={styles.restValueRow}>
             {!resting && !restOver && <Icon name="timer" size={16} color="#101012" />}
             <Text style={styles.statValue}>
@@ -229,11 +231,6 @@ export function WorkoutSessionScreen({ session, onMinimize }: WorkoutSessionScre
             </Text>
           </View>
           <Text style={styles.statLabel}>TIMER</Text>
-          {resting && (
-            <View style={styles.restTrack}>
-              <View style={[styles.restFill, { width: `${restFraction * 100}%` }]} />
-            </View>
-          )}
         </Pressable>
       </View>
 
@@ -463,9 +460,9 @@ const makeStyles = (t: Theme) =>
     statLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 8.5, letterSpacing: 1, color: '#101012', opacity: 0.6, marginTop: 3 },
     restBox: { overflow: 'hidden' },
     restValueRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    // Drains as the rest runs down, along the tile's bottom edge.
-    restTrack: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 4, backgroundColor: 'rgba(16,16,18,0.1)' },
-    restFill: { height: '100%', backgroundColor: 'rgba(16,16,18,0.55)' },
+    // Fills the whole tile left to right as the rest runs, so it reads from arm's
+    // length; full mint is also the "rest over" colour.
+    restFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: colors.mint },
     restPanel: {
       marginHorizontal: 16,
       marginBottom: 14,
