@@ -152,19 +152,40 @@ export function WorkoutSessionScreen({ session, onMinimize }: WorkoutSessionScre
     }));
   }
 
+  /**
+   * The weight to offer for a row: what was already lifted on an earlier set of
+   * this exercise today, since the load usually stays put while the reps drop.
+   * Only when nothing has been entered yet does last time's set decide.
+   */
+  function suggestedWeight(exercise: SessionExercise, index: number): number | null {
+    for (let i = index - 1; i >= 0; i--) {
+      const weight = exercise.sets[i].weightKg;
+      if (weight !== null) return weight;
+    }
+    return history[exercise.id]?.[index]?.weightKg ?? null;
+  }
+
   function toggleDone(exercise: SessionExercise, set: SessionSet, index: number) {
+    if (set.done) {
+      patchSet(exercise.id, set.id, current => ({ ...current, done: false }));
+      return;
+    }
     const previous = history[exercise.id]?.[index];
-    patchSet(exercise.id, set.id, current =>
-      current.done
-        ? { ...current, done: false }
-        : {
-            // Ticking an untouched row keeps the numbers its placeholder was showing.
-            ...current,
-            weightKg: current.weightKg ?? previous?.weightKg ?? 0,
-            reps: current.reps ?? previous?.reps ?? exercise.targetReps ?? 0,
-            done: true,
-          }
-    );
+    // Ticking an untouched row keeps the numbers its placeholder was showing.
+    const carried = suggestedWeight(exercise, index);
+    const weightKg = set.weightKg ?? carried ?? 0;
+    const reps = set.reps ?? previous?.reps ?? exercise.targetReps ?? 0;
+    patchExercise(exercise.id, current => ({
+      ...current,
+      sets: current.sets.map((s, i) => {
+        if (i === index) return { ...s, weightKg, reps, done: true };
+        // Only the next row is set up, with the same weight — usually it doesn't
+        // change while the reps drop — so only the reps are left to type. A weight
+        // typed there by hand is left alone.
+        if (i === index + 1 && !s.done && s.weightKg === null) return { ...s, weightKg };
+        return s;
+      }),
+    }));
   }
 
   function addExercise(name: string) {
@@ -303,6 +324,7 @@ export function WorkoutSessionScreen({ session, onMinimize }: WorkoutSessionScre
 
             {exercise.sets.map((set, index) => {
               const previous = history[exercise.id]?.[index];
+              const suggested = suggestedWeight(exercise, index);
               const repsPlaceholder = previous?.reps ?? exercise.targetReps;
               return (
                 <View key={set.id} style={[styles.setRow, set.done && styles.setRowDone]}>
@@ -316,7 +338,7 @@ export function WorkoutSessionScreen({ session, onMinimize }: WorkoutSessionScre
                     style={[styles.input, styles.colInput]}
                     value={set.weightKg === null ? '' : String(set.weightKg)}
                     onChangeText={text => patchSet(exercise.id, set.id, s => ({ ...s, weightKg: parseNumber(text) }))}
-                    placeholder={previous?.weightKg != null ? String(previous.weightKg) : '0'}
+                    placeholder={suggested !== null ? String(suggested) : '0'}
                     placeholderTextColor={theme.ink(0.3)}
                     keyboardType="decimal-pad"
                     maxLength={5}
