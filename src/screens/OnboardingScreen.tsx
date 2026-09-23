@@ -113,7 +113,7 @@ export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenPro
           <View>
             <Text style={styles.h2}>Ko si ti?</Text>
             <Text style={styles.sub}>Nekoliko podataka je dovoljno da izračunamo tvoj dnevni cilj kalorija i makronutrijenata.</Text>
-            <Text style={styles.fieldLabel}>IME</Text>
+            <Text style={styles.fieldLabel}>IME I PREZIME</Text>
             <TextInput
               value={name}
               onChangeText={setName}

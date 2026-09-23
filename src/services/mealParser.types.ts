@@ -25,7 +25,7 @@ export interface MealParseResult {
 
 /** How much one tap of +/- changes the amount. */
 export function stepFor(unit: MealUnit): number {
-  return unit === 'kom' ? 1 : 10;
+  return unit === 'kom' ? 1 : 5;
 }
 
 /** "300 g", "250 ml", "2 kom" — no multipliers, no decimals. */

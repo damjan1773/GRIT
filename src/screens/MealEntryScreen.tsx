@@ -70,7 +70,7 @@ export function MealEntryScreen() {
     }
   }
 
-  /** Grams and millilitres move in 10s, pieces in 1s, never below one step. */
+  /** Grams and millilitres move in 5s, pieces in 1s, never below one step. */
   function changeAmount(messageId: string, itemIndex: number, direction: 1 | -1) {
     setMessages(prev =>
       prev.map(m => {

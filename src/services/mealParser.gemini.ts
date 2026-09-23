@@ -102,7 +102,7 @@ function toItems(parsed: any): MealParseItem[] {
     .map((item: any): MealParseItem => {
       const unit = toUnit(item.unit);
       const step = stepFor(unit);
-      // Whole numbers only: grams land on 10s, pieces on 1s, so +/- stays tidy.
+      // Whole numbers only: grams land on 5s, pieces on 1s, so +/- stays tidy.
       const amount = Math.max(step, Math.round((Number(item.amount) || step) / step) * step);
       return {
         name: String(item.name).trim(),
