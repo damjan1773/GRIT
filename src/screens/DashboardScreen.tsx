@@ -10,7 +10,7 @@ import { MacroCard } from '../components/MacroCard';
 import { SwipeableRow } from '../components/SwipeableRow';
 import { DayPicker } from '../components/DayPicker';
 import { useAppData } from '../context/AppDataContext';
-import { dayLabel, greetingFor } from '../utils/dates';
+import { dayLabel, forDay, greetingFor } from '../utils/dates';
 
 function initialsOf(name: string): string {
   return name
@@ -47,7 +47,8 @@ export function DashboardScreen() {
     { k: 0, p: 0, c: 0, f: 0 }
   );
   const target = profile.targetCalories;
-  const remaining = Math.max(0, target - consumed.k);
+  // Distance from the goal in either direction: short of it is a deficit, past it a surplus.
+  const gap = Math.round(consumed.k - target);
   const pct = target > 0 ? consumed.k / target : 0;
 
   return (
@@ -92,8 +93,16 @@ export function DashboardScreen() {
               <Text style={styles.consumedValue}>{Math.round(consumed.k).toLocaleString('sr-RS')}</Text>
               <Text style={styles.consumedSub}>od {target.toLocaleString('sr-RS')} kcal</Text>
               <View style={styles.remainingPill}>
-                <Icon name="local_fire_department" size={14} color={theme.accent} />
-                <Text style={styles.remainingText}>{Math.round(remaining).toLocaleString('sr-RS')} kcal preostalo</Text>
+                <Icon
+                  name={gap === 0 ? 'local_fire_department' : gap > 0 ? 'trending_up' : 'trending_down'}
+                  size={14}
+                  color={theme.accent}
+                />
+                <Text style={styles.remainingText}>
+                  {gap === 0
+                    ? 'tačno na cilju'
+                    : `${Math.abs(gap).toLocaleString('sr-RS')} kcal u ${gap > 0 ? 'suficitu' : 'deficitu'}`}
+                </Text>
               </View>
             </View>
           </ProgressRing>
@@ -107,7 +116,10 @@ export function DashboardScreen() {
       </View>
 
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Poslednji obroci</Text>
+        {/* The day picker can move off today, and then the heading has to say so. */}
+        <Text style={styles.sectionTitle}>
+          {isToday ? 'Današnji obroci' : `Obroci ${forDay(selectedDateKey, todayKey)}`}
+        </Text>
       </View>
       <View style={{ gap: 9 }}>
         {dayMeals.length === 0 && (
