@@ -31,6 +31,19 @@ export function greetingFor(date: Date): string {
   return 'Dobro veče';
 }
 
+const MONTHS = ['Januar', 'Februar', 'Mart', 'April', 'Maj', 'Jun', 'Jul', 'Avgust', 'Septembar', 'Oktobar', 'Novembar', 'Decembar'];
+
+/** "Oktobar 2026" for a month key "2026-10". */
+export function monthLabel(monthKey: string): string {
+  const [y, m] = monthKey.split('-').map(Number);
+  return `${MONTHS[m - 1]} ${y}`;
+}
+
+/** "O" for a month key "2026-10" — one letter per bar on a year chart. */
+export function monthInitial(monthKey: string): string {
+  return MONTHS[Number(monthKey.slice(5, 7)) - 1][0];
+}
+
 /** Whole days since the epoch — a time axis on which consecutive days are 1 apart. */
 export function dayNumber(key: string): number {
   const [y, m, d] = key.split('-').map(Number);

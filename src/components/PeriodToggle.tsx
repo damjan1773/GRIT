@@ -14,6 +14,7 @@ export interface ToggleOption<T extends string> {
 const PERIOD_OPTIONS: ToggleOption<Period>[] = [
   { id: 'week', label: 'Nedelja' },
   { id: 'month', label: 'Mesec' },
+  { id: 'year', label: 'Godina' },
 ];
 
 interface PeriodToggleProps<T extends string> {

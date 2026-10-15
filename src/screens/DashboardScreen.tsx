@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, gradientColors, gradientLocations, softGradientColors } from '../theme/colors';
+import { colors, gradientColors, gradientLocations } from '../theme/colors';
 import { Theme } from '../theme/theme';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { Icon } from '../components/Icon';
+import { IconBadge } from '../components/IconBadge';
 import { ProgressRing } from '../components/ProgressRing';
 import { MacroCard } from '../components/MacroCard';
 import { SwipeableRow } from '../components/SwipeableRow';
@@ -128,9 +129,7 @@ export function DashboardScreen() {
         {dayMeals.map(meal => (
           <SwipeableRow key={meal.id} onDelete={() => deleteMeal(meal.id)}>
             <View style={styles.mealRow}>
-              <View style={styles.mealIconWrap}>
-                <Icon name="restaurant" size={19} color={theme.accent} />
-              </View>
+              <IconBadge symbol="fork.knife" icon="restaurant" hue="green" size={38} iconSize={32} />
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.mealName} numberOfLines={1}>
                   {meal.name}
@@ -199,7 +198,6 @@ const makeStyles = (t: Theme) =>
       borderWidth: 1,
       borderColor: t.ink(0.06),
     },
-    mealIconWrap: { width: 38, height: 38, borderRadius: 13, backgroundColor: softGradientColors[0], alignItems: 'center', justifyContent: 'center' },
     mealName: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: t.text },
     mealMeta: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: t.ink(0.4), marginTop: 2 },
     mealKcal: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 15, color: t.text },

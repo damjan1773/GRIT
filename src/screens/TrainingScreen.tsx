@@ -190,11 +190,6 @@ function WorkoutCard({ workout, onPress }: { workout: Workout; onPress: () => vo
           {exerciseCountLabel(workout.exercises.length)} · ~{estimateMinutes(workout)} min
         </Text>
       </View>
-      {workout.builtIn && (
-        <View style={styles.tagPill}>
-          <Text style={styles.tagText}>{workout.tag}</Text>
-        </View>
-      )}
       <Icon name="chevron_right" size={22} color={theme.ink(0.35)} />
     </Pressable>
   );
@@ -235,8 +230,6 @@ const makeStyles = (t: Theme) =>
     },
     cardName: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: t.text },
     cardMeta: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: t.ink(0.45), marginTop: 2 },
-    tagPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, backgroundColor: 'rgba(143,233,206,0.13)' },
-    tagText: { fontFamily: 'Poppins_600SemiBold', fontSize: 10, color: t.accent },
     resumeCard: {
       flexDirection: 'row',
       alignItems: 'center',

@@ -55,9 +55,6 @@ export function WorkoutDetailScreen({
         <Pressable onPress={onBack} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Nazad">
           <Icon name="arrow_back" size={20} color={theme.text} />
         </Pressable>
-        <View style={styles.tagPill}>
-          <Text style={styles.tagText}>{workout.builtIn ? workout.tag : 'Moj trening'}</Text>
-        </View>
       </View>
 
       <Text style={styles.title}>{workout.name}</Text>
@@ -125,8 +122,6 @@ const makeStyles = (t: Theme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    tagPill: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99, backgroundColor: 'rgba(143,233,206,0.13)' },
-    tagText: { fontFamily: 'Poppins_700Bold', fontSize: 11, color: t.accent },
     title: { fontFamily: 'Poppins_900Black_Italic', fontSize: 30, lineHeight: 36, color: t.text, letterSpacing: -0.3 },
     statsRow: { flexDirection: 'row', gap: 8, marginTop: 18 },
     statBox: { flex: 1, paddingVertical: 12, paddingHorizontal: 12, borderRadius: 18 },

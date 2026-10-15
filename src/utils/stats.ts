@@ -2,13 +2,48 @@ import { Meal, WorkoutSession } from '../types';
 import { shiftDateKey, toDateKey } from './dates';
 import { sessionVolume } from './workouts';
 
-export type Period = 'week' | 'month';
-export const PERIOD_DAYS: Record<Period, number> = { week: 7, month: 30 };
+export type Period = 'week' | 'month' | 'year';
 
-/** The period's day keys, ending today, oldest first. */
+/**
+ * The period's day keys, ending today, oldest first. A year is the current
+ * month and the eleven before it, whole, so it splits cleanly into twelve months.
+ */
 export function periodDayKeys(todayKey: string, period: Period): string[] {
-  const count = PERIOD_DAYS[period];
+  const count = period === 'week' ? 7 : period === 'month' ? 30 : daysSince(firstOfMonthBefore(todayKey, 11), todayKey) + 1;
   return Array.from({ length: count }, (_, i) => shiftDateKey(todayKey, i - (count - 1)));
+}
+
+/** "2025-11-01" for eleven months before a day in October 2026. */
+function firstOfMonthBefore(dateKey: string, months: number): string {
+  const [y, m] = dateKey.split('-').map(Number);
+  const index = y * 12 + (m - 1) - months;
+  return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, '0')}-01`;
+}
+
+function daysSince(fromKey: string, toKey: string): number {
+  return Math.round((Date.parse(`${toKey}T12:00:00Z`) - Date.parse(`${fromKey}T12:00:00Z`)) / 86_400_000);
+}
+
+/**
+ * Days folded into calendar months ("2026-10"), oldest first. An average is
+ * taken over the days with data, as everywhere else; a total simply adds up.
+ */
+export function monthlyValues(days: DayValue[], fold: 'average' | 'total'): DayValue[] {
+  const months = new Map<string, { sum: number; logged: number }>();
+  for (const day of days) {
+    const key = day.dateKey.slice(0, 7);
+    const month = months.get(key) ?? { sum: 0, logged: 0 };
+    if (day.hasData) {
+      month.sum += day.value;
+      month.logged += 1;
+    }
+    months.set(key, month);
+  }
+  return [...months.entries()].map(([dateKey, { sum, logged }]) => ({
+    dateKey,
+    value: Math.round(fold === 'average' ? (logged ? sum / logged : 0) : sum),
+    hasData: logged > 0,
+  }));
 }
 
 export interface DayValue {
