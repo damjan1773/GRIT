@@ -1,3 +1,5 @@
+import type { MealParseItem } from '../services/mealParser.types';
+
 export type Sex = 'f' | 'm';
 
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'athlete';
@@ -101,4 +103,6 @@ export interface Meal extends MealMacros {
   name: string;
   timestamp: number;
   dateKey: string;
+  /** The foods it was made of, as confirmed in the chat. Absent on meals saved before this was kept. */
+  items?: MealParseItem[];
 }

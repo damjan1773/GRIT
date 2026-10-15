@@ -10,6 +10,8 @@ import { ProgressRing } from '../components/ProgressRing';
 import { MacroCard } from '../components/MacroCard';
 import { SwipeableRow } from '../components/SwipeableRow';
 import { DayPicker } from '../components/DayPicker';
+import { useNavigation } from '@react-navigation/native';
+import { MealDetailScreen } from './MealDetailScreen';
 import { useAppData } from '../context/AppDataContext';
 import { dayLabel, forDay, greetingFor } from '../utils/dates';
 
@@ -22,7 +24,7 @@ function initialsOf(name: string): string {
 }
 
 export function DashboardScreen() {
-  const { profile, todayKey, selectedDateKey, setSelectedDateKey, dayMeals, deleteMeal } = useAppData();
+  const { profile, todayKey, selectedDateKey, setSelectedDateKey, dayMeals, meals, deleteMeal } = useAppData();
   const [dayPickerOpen, setDayPickerOpen] = useState(false);
   const styles = useThemedStyles(makeStyles);
   const { theme } = useTheme();
@@ -34,12 +36,31 @@ export function DashboardScreen() {
     return () => clearInterval(timer);
   }, []);
 
+  // A meal opened from the list. Looked up by id, so a meal deleted meanwhile
+  // (swiped away, or from its own screen) simply falls back to the list.
+  const navigation = useNavigation<any>();
+  const [openMealId, setOpenMealId] = useState<string | null>(null);
+  const openMeal = openMealId ? meals.find(m => m.id === openMealId) : undefined;
+
+  // Tapping the tab while already on it goes back to the list, as native tab bars do.
+  useEffect(
+    () =>
+      navigation.addListener('tabPress', () => {
+        if (navigation.isFocused()) setOpenMealId(null);
+      }),
+    [navigation]
+  );
+
   if (!profile) {
     return (
       <View style={styles.emptyScreen}>
         <Text style={styles.emptyText}>Prvo popuni onboarding da bismo izračunali tvoj cilj.</Text>
       </View>
     );
+  }
+
+  if (openMeal) {
+    return <MealDetailScreen meal={openMeal} onBack={() => setOpenMealId(null)} />;
   }
 
   const isToday = selectedDateKey === todayKey;
@@ -128,7 +149,12 @@ export function DashboardScreen() {
         )}
         {dayMeals.map(meal => (
           <SwipeableRow key={meal.id} onDelete={() => deleteMeal(meal.id)}>
-            <View style={styles.mealRow}>
+            <Pressable
+              onPress={() => setOpenMealId(meal.id)}
+              style={({ pressed }) => [styles.mealRow, pressed && { opacity: 0.85 }]}
+              accessibilityRole="button"
+              accessibilityLabel={`${meal.name}, ${Math.round(meal.calories)} kcal. Otvori obrok.`}
+            >
               <IconBadge symbol="fork.knife" icon="restaurant" hue="green" size={38} iconSize={32} />
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.mealName} numberOfLines={1}>
@@ -143,7 +169,7 @@ export function DashboardScreen() {
                 <Text style={styles.mealKcal}>{Math.round(meal.calories)}</Text>
                 <Text style={styles.mealKcalLabel}>KCAL</Text>
               </View>
-            </View>
+            </Pressable>
           </SwipeableRow>
         ))}
       </View>

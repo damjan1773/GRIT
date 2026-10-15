@@ -8,17 +8,22 @@ interface DetailHeaderProps {
   title: string;
   subtitle?: string;
   onBack: () => void;
+  /** An action for the top-right corner, level with the back button. */
+  right?: React.ReactNode;
 }
 
 /** Back button, then a large title — the layout the workout detail uses. */
-export function DetailHeader({ title, subtitle, onBack }: DetailHeaderProps) {
+export function DetailHeader({ title, subtitle, onBack, right }: DetailHeaderProps) {
   const { theme } = useTheme();
   const styles = useThemedStyles(makeStyles);
   return (
     <View>
-      <Pressable onPress={onBack} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Nazad">
-        <Icon name="arrow_back" size={20} color={theme.text} />
-      </Pressable>
+      <View style={styles.topRow}>
+        <Pressable onPress={onBack} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Nazad">
+          <Icon name="arrow_back" size={20} color={theme.text} />
+        </Pressable>
+        {right}
+      </View>
       <Text style={styles.title}>{title}</Text>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
     </View>
@@ -27,6 +32,7 @@ export function DetailHeader({ title, subtitle, onBack }: DetailHeaderProps) {
 
 const makeStyles = (t: Theme) =>
   StyleSheet.create({
+    topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
     backBtn: {
       width: 40,
       height: 40,
@@ -35,7 +41,6 @@ const makeStyles = (t: Theme) =>
       borderColor: t.ink(0.12),
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: 16,
     },
     title: { fontFamily: 'Poppins_900Black_Italic', fontSize: 28, lineHeight: 34, color: t.text, letterSpacing: -0.3 },
     subtitle: { fontFamily: 'Poppins_500Medium', fontSize: 12.5, lineHeight: 18, color: t.ink(0.5), marginTop: 4 },

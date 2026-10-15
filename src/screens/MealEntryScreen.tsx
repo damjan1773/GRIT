@@ -105,6 +105,7 @@ export function MealEntryScreen() {
       fats: totals.fats,
       timestamp: Date.now(),
       dateKey: selectedDateKey,
+      items: message.items,
     };
     await addMeal(meal);
 
