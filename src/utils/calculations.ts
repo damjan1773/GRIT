@@ -22,13 +22,22 @@ export function calculateTDEE(bmr: number, activity: ActivityLevel): number {
   return Math.round(bmr * getActivityOption(activity).multiplier);
 }
 
-/** Makro raspodela 25% proteini / 45% ugljeni hidrati / 30% masti */
-export function calculateMacroGoals(targetCalories: number) {
-  return {
-    protein: Math.round((targetCalories * 0.25) / 4),
-    carbs: Math.round((targetCalories * 0.45) / 4),
-    fats: Math.round((targetCalories * 0.3) / 9),
-  };
+/** Protein per kilogram of body mass: the middle of the 1.6–2.2 g/kg the research supports. */
+export const PROTEIN_G_PER_KG = 2;
+/** Share of the day's calories from fat. */
+export const FAT_SHARE = 0.3;
+
+/**
+ * Protein follows body mass (2 g/kg), not a share of calories — a percentage
+ * overshoots on a large target and undershoots on a cut. Fat takes 30% of the
+ * calories and carbohydrate whatever is left.
+ */
+export function calculateMacroGoals(targetCalories: number, weightKg: number) {
+  const protein = Math.round(weightKg * PROTEIN_G_PER_KG);
+  const fats = Math.round((targetCalories * FAT_SHARE) / 9);
+  // On a very small target the remainder could go negative; never below zero.
+  const carbs = Math.max(0, Math.round((targetCalories - protein * 4 - fats * 9) / 4));
+  return { protein, carbs, fats };
 }
 
 export function calculateBMI(weightKg: number, heightCm: number): number {

@@ -59,7 +59,7 @@ export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenPro
   const bmr = useMemo(() => calculateBMR(weight, height, age, sex), [weight, height, age, sex]);
   const tdee = useMemo(() => calculateTDEE(bmr, activity), [bmr, activity]);
   const target = tdee + adjustment;
-  const macros = useMemo(() => calculateMacroGoals(target), [target]);
+  const macros = useMemo(() => calculateMacroGoals(target, weight), [target, weight]);
 
   function next() {
     if (step >= SUMMARY_STEP) {

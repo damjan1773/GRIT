@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Meal, UserProfile, WeightEntry, Workout, WorkoutSession } from '../types';
 import { ThemeMode } from '../theme/theme';
+import { calculateMacroGoals } from '../utils/calculations';
 
 const KEYS = {
   profile: 'nutra:profile',
@@ -34,6 +35,9 @@ export async function loadProfile(): Promise<UserProfile | null> {
   const parsed = JSON.parse(raw) as UserProfile;
   return {
     ...parsed,
+    // Recomputed rather than read back, so a profile saved under an older split
+    // picks up the current one without going through onboarding again.
+    macroGoals: calculateMacroGoals(parsed.targetCalories, parsed.weightKg),
     name: parsed.name?.trim() || DEFAULT_USER_NAME,
     // Saved before goals existed: those targets were plain maintenance.
     calorieAdjustment: typeof parsed.calorieAdjustment === 'number' ? parsed.calorieAdjustment : 0,
