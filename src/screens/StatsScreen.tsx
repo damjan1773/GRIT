@@ -5,7 +5,10 @@ import { chartColors } from '../theme/colors';
 import { Theme } from '../theme/theme';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { Icon } from '../components/Icon';
+import { IconBadge } from '../components/IconBadge';
 import { Sparkline } from '../components/charts/Sparkline';
+import { IconHue } from '../theme/iconHues';
+import type { SFSymbol } from 'sf-symbols-typescript';
 import { useAppData } from '../context/AppDataContext';
 import { METRICS, MetricDef, MetricId, MetricSection, SECTION_TITLES, dailyValues, sectionColor } from '../data/statMetrics';
 import { dayLabel } from '../utils/dates';
@@ -148,8 +151,9 @@ function MetricCard({ metric, days, summary, onPress }: MetricCardProps) {
 
   return (
     <CardShell
+      symbol={metric.symbol}
       icon={metric.icon}
-      color={sectionColor(metric.section)}
+      hue={metric.hue}
       title={metric.title}
       meta="7 dana"
       onPress={onPress}
@@ -188,8 +192,9 @@ function StrengthCard({ featured, tracked, onPress }: StrengthCardProps) {
 
   return (
     <CardShell
+      symbol="chart.line.uptrend.xyaxis"
       icon="trending_up"
-      color={chartColors.training}
+      hue="indigo"
       title="Napredak snage"
       meta={tracked ? exerciseCountLabel(tracked) : ''}
       onPress={onPress}
@@ -233,8 +238,9 @@ function WeightCard({ onPress }: { onPress: () => void }) {
 
   return (
     <CardShell
+      symbol="scalemass.fill"
       icon="monitor_weight"
-      color={chartColors.nutrition}
+      hue="mint"
       title="Telesna težina"
       meta={latest ? (loggedToday ? 'Danas' : dayLabel(latest.dateKey, todayKey)) : ''}
       onPress={onPress}
@@ -255,8 +261,9 @@ function WeightCard({ onPress }: { onPress: () => void }) {
 }
 
 interface CardShellProps {
+  symbol: SFSymbol;
   icon: string;
-  color: string;
+  hue: IconHue;
   title: string;
   meta: string;
   onPress: () => void;
@@ -265,10 +272,10 @@ interface CardShellProps {
 }
 
 /**
- * A summary card: an icon in the section colour carries identity, while the
- * title and numbers stay in text colours so they read in both themes.
+ * A summary card: an icon in its own hue carries identity, while the title and
+ * numbers stay in text colours so they read in both themes.
  */
-function CardShell({ icon, color, title, meta, onPress, accessibilityLabel, children }: CardShellProps) {
+function CardShell({ symbol, icon, hue, title, meta, onPress, accessibilityLabel, children }: CardShellProps) {
   const { theme } = useTheme();
   const styles = useThemedStyles(makeStyles);
   return (
@@ -279,9 +286,7 @@ function CardShell({ icon, color, title, meta, onPress, accessibilityLabel, chil
       accessibilityLabel={accessibilityLabel}
     >
       <View style={styles.cardHeader}>
-        <View style={[styles.iconBadge, { backgroundColor: `${color}24` }]}>
-          <Icon name={icon} size={15} color={color} />
-        </View>
+        <IconBadge symbol={symbol} icon={icon} hue={hue} size={36} iconSize={27} />
         <Text style={styles.cardTitle} numberOfLines={1}>
           {title}
         </Text>
@@ -307,11 +312,11 @@ const makeStyles = (t: Theme) =>
       borderWidth: 1,
       borderColor: t.ink(0.07),
     },
-    cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    iconBadge: { width: 26, height: 26, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-    cardTitle: { flex: 1, fontFamily: 'Poppins_700Bold', fontSize: 13.5, color: t.text },
-    cardMeta: { fontFamily: 'Poppins_500Medium', fontSize: 11.5, color: t.ink(0.45) },
-    cardBody: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, marginTop: 14 },
+    // The header scales with its icon: a larger glyph beside a small title looked lopsided.
+    cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    cardTitle: { flex: 1, fontFamily: 'Poppins_700Bold', fontSize: 15.5, color: t.text },
+    cardMeta: { fontFamily: 'Poppins_500Medium', fontSize: 12, color: t.ink(0.45) },
+    cardBody: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, marginTop: 12 },
     cardValue: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 26, color: t.text },
     cardUnit: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: t.ink(0.5) },
     cardCaption: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: t.ink(0.45), marginTop: 1 },

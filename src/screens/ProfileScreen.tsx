@@ -1,11 +1,13 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, gradientColors, gradientLocations, softGradientColors } from '../theme/colors';
+import { colors, gradientColors, gradientLocations } from '../theme/colors';
 import { Theme, whiteChipEdge } from '../theme/theme';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
-import { Icon } from '../components/Icon';
 import { GradientButton } from '../components/GradientButton';
+import { IconBadge } from '../components/IconBadge';
+import { IconHue } from '../theme/iconHues';
+import type { SFSymbol } from 'sf-symbols-typescript';
 import { bmiLabel, calculateBMI, getActivityOption, goalLabel } from '../utils/calculations';
 import { formatSigned } from '../utils/format';
 import { UserProfile } from '../types';
@@ -19,21 +21,20 @@ function initialsOf(name: string): string {
 }
 
 interface DetailRowProps {
+  symbol: SFSymbol;
   icon: string;
+  hue: IconHue;
   label: string;
   value: string;
   note?: string;
   first?: boolean;
 }
 
-function DetailRow({ icon, label, value, note, first }: DetailRowProps) {
-  const { theme } = useTheme();
+function DetailRow({ symbol, icon, hue, label, value, note, first }: DetailRowProps) {
   const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.row, first && styles.rowFirst]}>
-      <View style={styles.rowIcon}>
-        <Icon name={icon} size={18} color={theme.accent} />
-      </View>
+      <IconBadge symbol={symbol} icon={icon} hue={hue} />
       <Text style={styles.rowLabel}>{label}</Text>
       <View style={styles.rowValueWrap}>
         <Text style={styles.rowValue}>{value}</Text>
@@ -50,9 +51,11 @@ function ThemeRow() {
   const isLight = theme.mode === 'light';
   return (
     <View style={styles.row}>
-      <View style={styles.rowIcon}>
-        <Icon name={isLight ? 'light_mode' : 'dark_mode'} size={18} color={theme.accent} />
-      </View>
+      <IconBadge
+        symbol={isLight ? 'sun.max.fill' : 'moon.fill'}
+        icon={isLight ? 'light_mode' : 'dark_mode'}
+        hue="indigo"
+      />
       <Text style={styles.rowLabel}>Tema</Text>
       <Text style={styles.rowNote}>{isLight ? 'Svetla' : 'Tamna'}</Text>
       <Switch
@@ -112,20 +115,78 @@ export function ProfileScreen({ profile, onEdit }: ProfileScreenProps) {
 
       <Text style={styles.sectionTitle}>Tvoji podaci</Text>
       <View style={styles.card}>
-        <DetailRow first icon="female" label="Pol" value={profile.sex === 'm' ? 'Muško' : 'Žensko'} />
-        <DetailRow icon="cake" label="Godine" value={`${profile.age}`} note="godina" />
-        <DetailRow icon="monitor_weight" label="Težina" value={`${profile.weightKg}`} note="kg" />
-        <DetailRow icon="straighten" label="Visina" value={`${profile.heightCm}`} note="cm" />
-        <DetailRow icon="directions_run" label="Aktivnost" value={activity.name} note={`×${activity.multiplier}`} />
         <DetailRow
+          first
+          symbol={profile.sex === 'm' ? 'figure.stand' : 'figure.stand.dress'}
+          icon={profile.sex === 'm' ? 'male' : 'female'}
+          hue="green"
+          label="Pol"
+          value={profile.sex === 'm' ? 'Muško' : 'Žensko'}
+        />
+        <DetailRow
+          symbol="birthday.cake.fill"
+          icon="cake"
+          hue="brown"
+          label="Godine"
+          value={`${profile.age}`}
+          note="godina"
+        />
+        <DetailRow
+          symbol="scalemass.fill"
+          icon="monitor_weight"
+          hue="mint"
+          label="Težina"
+          value={`${profile.weightKg}`}
+          note="kg"
+        />
+        <DetailRow
+          symbol="ruler.fill"
+          icon="straighten"
+          hue="cyan"
+          label="Visina"
+          value={`${profile.heightCm}`}
+          note="cm"
+        />
+        <DetailRow
+          symbol="figure.run"
+          icon="directions_run"
+          hue="blue"
+          label="Aktivnost"
+          value={activity.name}
+          note={`×${activity.multiplier}`}
+        />
+        <DetailRow
+          symbol="flag.fill"
           icon="flag"
+          hue="red"
           label="Cilj"
           value={goalLabel(profile.calorieAdjustment)}
           note={profile.calorieAdjustment ? `${formatSigned(profile.calorieAdjustment)} kcal` : undefined}
         />
-        <DetailRow icon="monitor_heart" label="BMI" value={bmi.toFixed(1)} note={bmiLabel(bmi)} />
-        <DetailRow icon="local_fire_department" label="BMR" value={profile.bmr.toLocaleString('sr-RS')} note="kcal" />
-        <DetailRow icon="bolt" label="TDEE" value={profile.tdee.toLocaleString('sr-RS')} note="kcal" />
+        <DetailRow
+          symbol="waveform.path.ecg"
+          icon="monitor_heart"
+          hue="purple"
+          label="BMI"
+          value={bmi.toFixed(1)}
+          note={bmiLabel(bmi)}
+        />
+        <DetailRow
+          symbol="flame.fill"
+          icon="local_fire_department"
+          hue="orange"
+          label="BMR"
+          value={profile.bmr.toLocaleString('sr-RS')}
+          note="kcal"
+        />
+        <DetailRow
+          symbol="bolt.fill"
+          icon="bolt"
+          hue="yellow"
+          label="TDEE"
+          value={profile.tdee.toLocaleString('sr-RS')}
+          note="kcal"
+        />
         <ThemeRow />
       </View>
 
@@ -170,14 +231,6 @@ const makeStyles = (t: Theme) =>
       borderTopColor: t.ink(0.06),
     },
     rowFirst: { borderTopWidth: 0 },
-    rowIcon: {
-      width: 34,
-      height: 34,
-      borderRadius: 12,
-      backgroundColor: softGradientColors[0],
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
     rowLabel: { flex: 1, fontFamily: 'Poppins_500Medium', fontSize: 13, color: t.ink(0.6) },
     rowValueWrap: { flexDirection: 'row', alignItems: 'baseline', gap: 5 },
     rowValue: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 16, color: t.text },
