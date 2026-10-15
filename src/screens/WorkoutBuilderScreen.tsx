@@ -1,10 +1,10 @@
 import React, { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { softGradientColors } from '../theme/colors';
 import { Theme } from '../theme/theme';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { Icon } from '../components/Icon';
 import { GradientButton } from '../components/GradientButton';
+import { NumberBadge } from '../components/NumberBadge';
 import { COMMON_EXERCISES } from '../data/commonExercises';
 import { createId } from '../services/storage';
 import { Exercise, ExerciseUnit, Workout } from '../types';
@@ -133,9 +133,7 @@ export function WorkoutBuilderScreen({ base, onCancel, onSave }: WorkoutBuilderS
             return (
               <View key={exercise.id} style={styles.exCard}>
                 <View style={styles.exTop}>
-                  <View style={styles.exIndex}>
-                    <Text style={styles.exIndexText}>{i + 1}</Text>
-                  </View>
+                  <NumberBadge value={i + 1} size={28} />
                   <TextInput
                     value={exercise.name}
                     onChangeText={text => update(exercise.id, { name: text })}
@@ -275,15 +273,6 @@ const makeStyles = (t: Theme) =>
     exList: { gap: 10 },
     exCard: { backgroundColor: t.surface, borderWidth: 1, borderColor: t.ink(0.07), borderRadius: 22, padding: 14, gap: 12 },
     exTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    exIndex: {
-      width: 28,
-      height: 28,
-      borderRadius: 9,
-      backgroundColor: softGradientColors[0],
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    exIndexText: { fontFamily: 'Poppins_700Bold', fontSize: 12, color: t.accent },
     exNameInput: { flex: 1, minWidth: 0, color: t.text, fontFamily: 'Poppins_600SemiBold', fontSize: 14, paddingVertical: 6 },
     removeBtn: { width: 28, height: 28, borderRadius: 10, backgroundColor: t.ink(0.06), alignItems: 'center', justifyContent: 'center' },
     exBottom: { flexDirection: 'row', gap: 10 },

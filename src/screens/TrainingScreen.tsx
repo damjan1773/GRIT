@@ -2,14 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, gradientColors, gradientLocations, softGradientColors } from '../theme/colors';
+import { colors, gradientColors, gradientLocations } from '../theme/colors';
 import { Theme } from '../theme/theme';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { Icon } from '../components/Icon';
 import { useAppData } from '../context/AppDataContext';
 import { BUILT_IN_WORKOUTS } from '../data/builtInWorkouts';
 import { Workout, WorkoutSession } from '../types';
-import { estimateMinutes, exerciseCountLabel, formatDuration, workoutIcon } from '../utils/workouts';
+import { estimateMinutes, exerciseCountLabel, formatDuration, workoutIcon, workoutSymbol } from '../utils/workouts';
+import { IconBadge } from '../components/IconBadge';
 import { WorkoutBuilderScreen } from './WorkoutBuilderScreen';
 import { WorkoutDetailScreen } from './WorkoutDetailScreen';
 import { WorkoutSessionScreen } from './WorkoutSessionScreen';
@@ -180,9 +181,7 @@ function WorkoutCard({ workout, onPress }: { workout: Workout; onPress: () => vo
   const styles = useThemedStyles(makeStyles);
   return (
     <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}>
-      <View style={styles.cardIcon}>
-        <Icon name={workoutIcon(workout)} size={20} color={theme.accent} />
-      </View>
+      <IconBadge symbol={workoutSymbol(workout)} icon={workoutIcon(workout)} hue="green" size={42} iconSize={34} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={styles.cardName} numberOfLines={1}>
           {workout.name}
@@ -233,14 +232,6 @@ const makeStyles = (t: Theme) =>
       backgroundColor: t.surface,
       borderWidth: 1,
       borderColor: t.ink(0.06),
-    },
-    cardIcon: {
-      width: 42,
-      height: 42,
-      borderRadius: 14,
-      backgroundColor: softGradientColors[0],
-      alignItems: 'center',
-      justifyContent: 'center',
     },
     cardName: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: t.text },
     cardMeta: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: t.ink(0.45), marginTop: 2 },

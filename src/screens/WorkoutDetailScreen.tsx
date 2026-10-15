@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { colors, softGradientColors } from '../theme/colors';
+import { colors } from '../theme/colors';
 import { Theme, whiteChipEdge } from '../theme/theme';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { Icon } from '../components/Icon';
 import { GradientButton } from '../components/GradientButton';
+import { NumberBadge } from '../components/NumberBadge';
 import { Workout } from '../types';
 import { estimateMinutes, formatPrescription, totalSets } from '../utils/workouts';
 
@@ -74,9 +75,7 @@ export function WorkoutDetailScreen({
       <View style={styles.card}>
         {workout.exercises.map((exercise, i) => (
           <View key={exercise.id} style={[styles.exRow, i === 0 && styles.exRowFirst]}>
-            <View style={styles.exIndex}>
-              <Text style={styles.exIndexText}>{i + 1}</Text>
-            </View>
+            <NumberBadge value={i + 1} />
             <Text style={styles.exName}>{exercise.name}</Text>
             <Text style={styles.exPrescription}>{formatPrescription(exercise)}</Text>
           </View>
@@ -144,15 +143,6 @@ const makeStyles = (t: Theme) =>
       borderTopColor: t.ink(0.06),
     },
     exRowFirst: { borderTopWidth: 0 },
-    exIndex: {
-      width: 30,
-      height: 30,
-      borderRadius: 10,
-      backgroundColor: softGradientColors[0],
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    exIndexText: { fontFamily: 'Poppins_700Bold', fontSize: 12, color: t.accent },
     exName: { flex: 1, fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: t.text },
     exPrescription: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 14, color: t.text },
     primaryBtn: { marginTop: 26 },

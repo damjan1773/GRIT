@@ -1,3 +1,4 @@
+import type { SFSymbol } from 'sf-symbols-typescript';
 import { Exercise, SessionSet, Workout, WorkoutSession } from '../types';
 
 export function totalSets(workout: Workout): number {
@@ -70,4 +71,11 @@ export function workoutIcon(workout: Workout): string {
   if (workout.tag === 'Kardio') return 'directions_run';
   if (workout.tag === 'Početnik') return 'accessibility_new';
   return 'fitness_center';
+}
+
+/** The same choice as workoutIcon, as an SF Symbol for iOS. */
+export function workoutSymbol(workout: Workout): SFSymbol {
+  if (workout.tag === 'Kardio') return 'figure.run';
+  if (workout.tag === 'Početnik') return 'figure.arms.open';
+  return 'dumbbell.fill';
 }
