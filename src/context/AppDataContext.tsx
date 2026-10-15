@@ -171,10 +171,13 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
           done: false,
         })),
       })),
+      // The rest length the last workout ended on, so a lifter who rests three
+      // minutes doesn't have to dial it in again every session.
+      restSeconds: sessions.find(s => s.restSeconds !== undefined)?.restSeconds,
     };
     setActiveSession(session);
     await saveActiveSession(session);
-  }, []);
+  }, [sessions]);
 
   const updateSession = useCallback(async (session: WorkoutSession) => {
     setActiveSession(session);

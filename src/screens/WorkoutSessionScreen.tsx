@@ -103,18 +103,21 @@ export function WorkoutSessionScreen({ session, onMinimize }: WorkoutSessionScre
     setRestPanelOpen(false);
   }
 
-  /** Before a rest this sets its length; during one it moves the end. */
+  /**
+   * Before a rest this sets its length; during one it moves the end. Either way
+   * the length is remembered, so the next rest starts from what was used last.
+   */
   function stepRest(direction: 1 | -1) {
     const delta = direction * REST_STEP_SECONDS;
+    const nextLength = Math.min(REST_MAX_SECONDS, Math.max(REST_MIN_SECONDS, restSeconds + delta));
     if (resting && restEndsAt !== null) {
       const current = Date.now();
       // At least a second left, so a minus can't end the rest by itself; at most the maximum.
       const endsAt = Math.min(current + REST_MAX_SECONDS * 1000, Math.max(current + 1000, restEndsAt + delta * 1000));
-      updateSession({ ...session, restEndsAt: endsAt });
+      updateSession({ ...session, restEndsAt: endsAt, restSeconds: nextLength });
       return;
     }
-    const next = Math.min(REST_MAX_SECONDS, Math.max(REST_MIN_SECONDS, restSeconds + delta));
-    updateSession({ ...session, restSeconds: next });
+    updateSession({ ...session, restSeconds: nextLength });
   }
 
   function stopRest() {

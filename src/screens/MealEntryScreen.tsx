@@ -132,8 +132,10 @@ export function MealEntryScreen() {
         <Pressable onPress={() => navigation.navigate('Dashboard')} style={styles.backBtn}>
           <Icon name="arrow_back" size={19} color={theme.text} />
         </Pressable>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Brzi unos</Text>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            Tvoj AI Nutricionista
+          </Text>
           {/* Off today, say so loudly — it's where the meal will be saved. */}
           {!isToday && (
             <Text style={[styles.headerSub, { color: theme.accent }]}>unos {forDay(selectedDateKey, todayKey)}</Text>
