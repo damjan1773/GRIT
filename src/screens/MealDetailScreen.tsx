@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { colors } from '../theme/colors';
-import { Theme, whiteChipEdge } from '../theme/theme';
-import { useTheme, useThemedStyles } from '../theme/ThemeContext';
+import { colors, gradientThirds } from '../theme/colors';
+import { Theme } from '../theme/theme';
+import { useThemedStyles } from '../theme/ThemeContext';
 import { DetailHeader } from '../components/DetailHeader';
+import { GradientTile } from '../components/GradientTile';
 import { Icon } from '../components/Icon';
 import { useAppData } from '../context/AppDataContext';
 import { formatAmount, itemTotals } from '../services/mealParser.types';
@@ -24,7 +25,6 @@ interface MealDetailScreenProps {
 }
 
 export function MealDetailScreen({ meal, onBack }: MealDetailScreenProps) {
-  const { theme } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const { profile, todayKey, deleteMeal } = useAppData();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -49,16 +49,17 @@ export function MealDetailScreen({ meal, onBack }: MealDetailScreenProps) {
   const share = target > 0 ? Math.round((meal.calories / target) * 100) : null;
   const goals = profile?.macroGoals;
   const macros = [
-    { label: 'Proteini', value: meal.protein, goal: goals?.protein, bg: colors.mint },
-    { label: 'Ugljeni h.', value: meal.carbs, goal: goals?.carbs, bg: colors.lav },
-    { label: 'Masti', value: meal.fats, goal: goals?.fats, bg: colors.white },
+    { label: 'Proteini', value: meal.protein, goal: goals?.protein, glow: colors.mint },
+    { label: 'Ugljeni hidrati', value: meal.carbs, goal: goals?.carbs, glow: colors.mid },
+    { label: 'Masti', value: meal.fats, goal: goals?.fats, glow: colors.lav },
   ];
   const items = meal.items ?? [];
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      {/* No title: the meal is named in the list it was opened from, and its
+          foods are listed below. When it was eaten is enough up here. */}
       <DetailHeader
-        title={capitalize(meal.name)}
         subtitle={`${dayLabel(meal.dateKey, todayKey)} · ${time}`}
         onBack={onBack}
         right={
@@ -83,15 +84,13 @@ export function MealDetailScreen({ meal, onBack }: MealDetailScreenProps) {
         {share !== null && <Text style={styles.kcalShare}>{share}% dnevnog cilja</Text>}
 
         <View style={styles.macroRow}>
-          {macros.map(m => (
-            <View
-              key={m.label}
-              style={[styles.macroBox, { backgroundColor: m.bg }, m.bg === colors.white && whiteChipEdge(theme)]}
-            >
+          {/* The same raised gradient tiles as the dashboard, profile and onboarding. */}
+          {macros.map((m, i) => (
+            <GradientTile key={m.label} gradient={gradientThirds[i]} glow={m.glow} contentStyle={styles.macroBox}>
               <Text style={styles.macroValue}>{Math.round(m.value)}g</Text>
               <Text style={styles.macroLabel}>{m.label}</Text>
               {m.goal ? <Text style={styles.macroShare}>{Math.round((m.value / m.goal) * 100)}% cilja</Text> : null}
-            </View>
+            </GradientTile>
           ))}
         </View>
       </View>
@@ -160,7 +159,7 @@ const makeStyles = (t: Theme) =>
     kcalUnit: { fontFamily: 'Poppins_700Bold', fontSize: 16, color: t.ink(0.5), letterSpacing: 0 },
     kcalShare: { fontFamily: 'Poppins_500Medium', fontSize: 12.5, color: t.ink(0.5), marginTop: 2 },
     macroRow: { flexDirection: 'row', gap: 8, marginTop: 18, alignSelf: 'stretch' },
-    macroBox: { flex: 1, paddingVertical: 12, borderRadius: 18, alignItems: 'center' },
+    macroBox: { paddingVertical: 12, paddingHorizontal: 6, alignItems: 'center' },
     macroValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 18, color: '#101012' },
     macroLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 10, color: '#101012', opacity: 0.68, marginTop: 3 },
     macroShare: { fontFamily: 'Poppins_500Medium', fontSize: 9.5, color: '#101012', opacity: 0.55, marginTop: 1 },

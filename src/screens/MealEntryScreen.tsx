@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Clipboard from 'expo-clipboard';
 import { colors, gradientColors, gradientLocations } from '../theme/colors';
 import { Theme, whiteChipEdge } from '../theme/theme';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
@@ -18,6 +19,12 @@ type ChatMessage =
   | { id: string; kind: 'typing' }
   | { id: string; kind: 'card'; items: MealParseItem[]; pending: boolean; locked: boolean };
 
+
+/** One line of the message field sits level with the 46px send button. */
+const INPUT_MIN_HEIGHT = 46;
+const INPUT_LINE_HEIGHT = 20;
+/** About five lines; longer messages scroll inside the field. */
+const INPUT_MAX_HEIGHT = INPUT_MIN_HEIGHT + 4 * INPUT_LINE_HEIGHT;
 
 let idCounter = 0;
 function nextId(): string {
@@ -36,11 +43,31 @@ export function MealEntryScreen() {
     { id: nextId(), kind: 'bot', text: 'Zdravo. Napiši svojim rečima šta si jeo i izračunaću kalorije i makronutrijente. Što detaljnije napišeš šta si pojeo/la to ću preciznije izračunati.' },
   ]);
   const [input, setInput] = useState('');
+  /** Measured content height of the message field, padding included. */
+  const [inputHeight, setInputHeight] = useState(INPUT_MIN_HEIGHT);
+  // An emptied field (after sending, or wiped by hand) must drop back to one line.
+  // Neither iOS nor a web textarea reliably reports the shrink, so it is reset here.
+  useEffect(() => {
+    if (!input) setInputHeight(INPUT_MIN_HEIGHT);
+  }, [input]);
 
   useEffect(() => {
     const t = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
     return () => clearTimeout(t);
   }, [messages]);
+
+  // The message just copied, flagged with "Kopirano" for a moment.
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!copiedId) return;
+    const timer = setTimeout(() => setCopiedId(null), 1500);
+    return () => clearTimeout(timer);
+  }, [copiedId]);
+
+  async function copyMessage(id: string, text: string) {
+    await Clipboard.setStringAsync(text);
+    setCopiedId(id);
+  }
 
   const isToday = selectedDateKey === todayKey;
   const consumed = dayMeals.reduce((sum, m) => sum + m.calories, 0);
@@ -151,16 +178,32 @@ export function MealEntryScreen() {
         {messages.map(message => {
           if (message.kind === 'bot') {
             return (
-              <View key={message.id} style={styles.botBubble}>
+              // Long-press copies, as in a messenger: Text's own `selectable` doesn't
+              // offer Copy reliably inside a chat bubble on iOS.
+              <Pressable
+                key={message.id}
+                onLongPress={() => copyMessage(message.id, message.text)}
+                style={({ pressed }) => [styles.botBubble, pressed && { opacity: 0.85 }]}
+                accessibilityHint="Dugi pritisak kopira poruku"
+              >
                 <Text style={styles.botText}>{message.text}</Text>
-              </View>
+                {copiedId === message.id && <Text style={styles.copied}>Kopirano</Text>}
+              </Pressable>
             );
           }
           if (message.kind === 'user') {
             return (
-              <LinearGradient key={message.id} colors={gradientColors} locations={gradientLocations} style={styles.userBubble}>
-                <Text style={styles.userText}>{message.text}</Text>
-              </LinearGradient>
+              <Pressable
+                key={message.id}
+                onLongPress={() => copyMessage(message.id, message.text)}
+                style={({ pressed }) => [styles.userBubbleWrap, pressed && { opacity: 0.85 }]}
+                accessibilityHint="Dugi pritisak kopira poruku"
+              >
+                <LinearGradient colors={gradientColors} locations={gradientLocations} style={styles.userBubble}>
+                  <Text style={styles.userText}>{message.text}</Text>
+                </LinearGradient>
+                {copiedId === message.id && <Text style={[styles.copied, styles.copiedRight]}>Kopirano</Text>}
+              </Pressable>
             );
           }
           if (message.kind === 'typing') {
@@ -270,13 +313,32 @@ export function MealEntryScreen() {
 
       <View style={styles.footer}>
         <View style={styles.inputRow}>
+          {/* Wraps onto new lines and grows upward with them, like a messenger,
+              up to a few lines; past that it scrolls inside. Return still sends. */}
           <TextInput
             value={input}
             onChangeText={setInput}
             onSubmitEditing={() => handleSend()}
+            multiline
+            submitBehavior="submit"
+            returnKeyType="send"
+            onContentSizeChange={e => setInputHeight(e.nativeEvent.contentSize.height)}
             placeholder="Šta si pojeo?"
             placeholderTextColor={theme.ink(0.4)}
-            style={styles.input}
+            style={[
+              styles.input,
+              // An empty field is always exactly one line: iOS otherwise keeps the
+              // height of the message just sent. While typing, iOS and Android grow
+              // the field by themselves within min/max; the web's textarea doesn't,
+              // so there the height follows the measured content.
+              !input
+                ? { height: INPUT_MIN_HEIGHT }
+                : Platform.OS === 'web' && {
+                    height: Math.min(INPUT_MAX_HEIGHT, Math.max(INPUT_MIN_HEIGHT, inputHeight)),
+                  },
+            ]}
+            // Leave scrolling on: a multiline field with scrollEnabled off stops
+            // wrapping and growing on iOS.
           />
           <Pressable onPress={() => handleSend()}>
             <LinearGradient colors={gradientColors} locations={gradientLocations} style={styles.sendBtn}>
@@ -320,7 +382,10 @@ const makeStyles = (t: Theme) =>
       alignSelf: 'flex-start',
     },
     botText: { fontFamily: 'Poppins_400Regular', fontSize: 13, lineHeight: 20, color: t.ink(0.82) },
-    userBubble: { maxWidth: '82%', padding: 13, paddingHorizontal: 16, borderRadius: 22, borderTopRightRadius: 7, alignSelf: 'flex-end' },
+    userBubbleWrap: { maxWidth: '82%', alignSelf: 'flex-end' },
+    userBubble: { padding: 13, paddingHorizontal: 16, borderRadius: 22, borderTopRightRadius: 7 },
+    copied: { fontFamily: 'Poppins_600SemiBold', fontSize: 11, color: t.accent, marginTop: 6 },
+    copiedRight: { alignSelf: 'flex-end' },
     userText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, lineHeight: 19, color: '#101012' },
     typingBubble: {
       flexDirection: 'row',
@@ -378,16 +443,33 @@ const makeStyles = (t: Theme) =>
     footer: { borderTopWidth: 1, borderTopColor: t.ink(0.06), paddingTop: 12, paddingBottom: 10, paddingHorizontal: 18 },
     inputRow: {
       flexDirection: 'row',
-      alignItems: 'center',
+      // The send button stays on the last line as the field grows, as in a messenger.
+      alignItems: 'flex-end',
       gap: 9,
       backgroundColor: t.surface,
       borderWidth: 1,
       borderColor: t.ink(0.09),
-      borderRadius: 99,
+      // Half the one-line height: a pill on one line, rounded corners once it grows.
+      borderRadius: 29,
       paddingLeft: 17,
       paddingVertical: 6,
       paddingRight: 6,
     },
-    input: { flex: 1, minWidth: 0, color: t.text, fontFamily: 'Poppins_500Medium', fontSize: 13.5, paddingVertical: 6 },
+    input: {
+      flex: 1,
+      minWidth: 0,
+      color: t.text,
+      fontFamily: 'Poppins_500Medium',
+      fontSize: 13.5,
+      // No explicit lineHeight: on iOS it adds space above the text in a multiline
+      // field, which made the top gap larger than the bottom one. Poppins at 13.5
+      // sets lines about INPUT_LINE_HEIGHT apart on its own.
+      minHeight: INPUT_MIN_HEIGHT,
+      maxHeight: INPUT_MAX_HEIGHT,
+      // Centres a single line on the 46px send button.
+      paddingTop: (INPUT_MIN_HEIGHT - INPUT_LINE_HEIGHT) / 2,
+      paddingBottom: (INPUT_MIN_HEIGHT - INPUT_LINE_HEIGHT) / 2,
+      textAlignVertical: 'top',
+    },
     sendBtn: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
   });

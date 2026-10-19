@@ -5,7 +5,8 @@ import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { Icon } from './Icon';
 
 interface DetailHeaderProps {
-  title: string;
+  /** Left out where the screen's content already says what it is. */
+  title?: string;
   subtitle?: string;
   onBack: () => void;
   /** An action for the top-right corner, level with the back button. */
@@ -24,8 +25,8 @@ export function DetailHeader({ title, subtitle, onBack, right }: DetailHeaderPro
         </Pressable>
         {right}
       </View>
-      <Text style={styles.title}>{title}</Text>
-      {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      {title ? <Text style={styles.title}>{title}</Text> : null}
+      {subtitle ? <Text style={[styles.subtitle, !title && styles.subtitleAlone]}>{subtitle}</Text> : null}
     </View>
   );
 }
@@ -44,4 +45,5 @@ const makeStyles = (t: Theme) =>
     },
     title: { fontFamily: 'Poppins_900Black_Italic', fontSize: 28, lineHeight: 34, color: t.text, letterSpacing: -0.3 },
     subtitle: { fontFamily: 'Poppins_500Medium', fontSize: 12.5, lineHeight: 18, color: t.ink(0.5), marginTop: 4 },
+    subtitleAlone: { marginTop: 0 },
   });

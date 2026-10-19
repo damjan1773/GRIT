@@ -114,7 +114,7 @@ export function DashboardScreen() {
             <View style={{ alignItems: 'center' }}>
               <Text style={styles.consumedValue}>{Math.round(consumed.k).toLocaleString('sr-RS')}</Text>
               <Text style={styles.consumedSub}>od {target.toLocaleString('sr-RS')} kcal</Text>
-              <View style={styles.remainingPill}>
+              <View style={styles.remainingRow}>
                 <Icon
                   name={gap === 0 ? 'local_fire_department' : gap > 0 ? 'trending_up' : 'trending_down'}
                   size={14}
@@ -216,15 +216,11 @@ const makeStyles = (t: Theme) =>
     ringWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 4 },
     consumedValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 50, color: t.text },
     consumedSub: { fontFamily: 'Poppins_500Medium', fontSize: 12, color: t.ink(0.45), marginTop: 5 },
-    remainingPill: {
+    remainingRow: {
       marginTop: 11,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 5,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 99,
-      backgroundColor: 'rgba(143,233,206,0.13)',
     },
     remainingText: { fontFamily: 'Poppins_700Bold', fontSize: 11, color: t.accent },
     macroRow: { flexDirection: 'row', gap: 9, marginTop: 12 },
