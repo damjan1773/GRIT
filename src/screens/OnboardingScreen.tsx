@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { colors, gradientColors, gradientLocations } from '../theme/colors';
-import { Theme, whiteChipEdge } from '../theme/theme';
+import { colors, gradientColors, gradientLocations, gradientThirds } from '../theme/colors';
+import { Theme } from '../theme/theme';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { Icon } from '../components/Icon';
 import { StepperButton } from '../components/Stepper';
 import { GradientButton } from '../components/GradientButton';
+import { GradientTile } from '../components/GradientTile';
 import { LinearGradient } from 'expo-linear-gradient';
 import Slider from '@react-native-community/slider';
 import {
@@ -300,19 +301,18 @@ export function OnboardingScreen({ initialProfile, onDone }: OnboardingScreenPro
             </LinearGradient>
             <Text style={styles.targetValue}>{target.toLocaleString('sr-RS')}</Text>
             <Text style={styles.targetSub}>kcal na dan · {goalLabel(adjustment)}</Text>
+            {/* The same raised gradient tiles as the dashboard and the profile. */}
             <View style={styles.macroRow}>
-              <View style={[styles.macroBox, { backgroundColor: colors.mint }]}>
-                <Text style={styles.macroValue}>{macros.protein}g</Text>
-                <Text style={styles.macroLabel}>Proteini</Text>
-              </View>
-              <View style={[styles.macroBox, { backgroundColor: colors.lav }]}>
-                <Text style={styles.macroValue}>{macros.carbs}g</Text>
-                <Text style={styles.macroLabel}>Ugljeni h.</Text>
-              </View>
-              <View style={[styles.macroBox, { backgroundColor: colors.white }, whiteChipEdge(theme)]}>
-                <Text style={styles.macroValue}>{macros.fats}g</Text>
-                <Text style={styles.macroLabel}>Masti</Text>
-              </View>
+              {[
+                { label: 'Proteini', value: macros.protein, glow: colors.mint },
+                { label: 'Ugljeni hidrati', value: macros.carbs, glow: colors.mid },
+                { label: 'Masti', value: macros.fats, glow: colors.lav },
+              ].map((m, i) => (
+                <GradientTile key={m.label} gradient={gradientThirds[i]} glow={m.glow} contentStyle={styles.macroBox}>
+                  <Text style={styles.macroValue}>{m.value}g</Text>
+                  <Text style={styles.macroLabel}>{m.label}</Text>
+                </GradientTile>
+              ))}
             </View>
           </View>
         )}
@@ -412,10 +412,10 @@ const makeStyles = (t: Theme) =>
     actMult: { fontFamily: 'Poppins_700Bold', fontSize: 11, opacity: 0.72 },
     badge: { paddingHorizontal: 13, paddingVertical: 6, borderRadius: 99 },
     badgeText: { fontFamily: 'Poppins_600SemiBold', fontSize: 10.5, letterSpacing: 2, color: '#101012' },
-    targetValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 72, color: colors.mint, marginTop: 20 },
+    targetValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 72, color: t.text, marginTop: 20 },
     targetSub: { fontFamily: 'Poppins_500Medium', fontSize: 13, color: t.ink(0.5), marginTop: 6 },
     macroRow: { flexDirection: 'row', gap: 8, marginTop: 26, alignSelf: 'stretch' },
-    macroBox: { flex: 1, paddingVertical: 14, paddingHorizontal: 10, borderRadius: 20, alignItems: 'center' },
+    macroBox: { paddingVertical: 14, paddingHorizontal: 6, alignItems: 'center' },
     macroValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 21, color: '#101012' },
     macroLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 10.5, color: '#101012', opacity: 0.68, marginTop: 4 },
     goalCard: {

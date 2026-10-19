@@ -1,10 +1,11 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, gradientColors, gradientLocations } from '../theme/colors';
-import { Theme, whiteChipEdge } from '../theme/theme';
+import { colors, gradientColors, gradientLocations, gradientThirds } from '../theme/colors';
+import { Theme } from '../theme/theme';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { GradientButton } from '../components/GradientButton';
+import { GradientTile } from '../components/GradientTile';
 import { IconBadge } from '../components/IconBadge';
 import { IconHue } from '../theme/iconHues';
 import type { SFSymbol } from 'sf-symbols-typescript';
@@ -76,7 +77,6 @@ interface ProfileScreenProps {
 }
 
 export function ProfileScreen({ profile, onEdit }: ProfileScreenProps) {
-  const { theme } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const activity = getActivityOption(profile.activity);
   const bmi = calculateBMI(profile.weightKg, profile.heightCm);
@@ -97,19 +97,18 @@ export function ProfileScreen({ profile, onEdit }: ProfileScreenProps) {
         <Text style={styles.goalBadge}>DNEVNI CILJ</Text>
         <Text style={styles.goalValue}>{profile.targetCalories.toLocaleString('sr-RS')}</Text>
         <Text style={styles.goalSub}>kcal na dan · {goalLabel(profile.calorieAdjustment)}</Text>
+        {/* The same raised gradient tiles as the dashboard, here holding the goals. */}
         <View style={styles.macroRow}>
-          <View style={[styles.macroBox, { backgroundColor: colors.mint }]}>
-            <Text style={styles.macroValue}>{profile.macroGoals.protein}g</Text>
-            <Text style={styles.macroLabel}>Proteini</Text>
-          </View>
-          <View style={[styles.macroBox, { backgroundColor: colors.lav }]}>
-            <Text style={styles.macroValue}>{profile.macroGoals.carbs}g</Text>
-            <Text style={styles.macroLabel}>Ugljeni h.</Text>
-          </View>
-          <View style={[styles.macroBox, { backgroundColor: colors.white }, whiteChipEdge(theme)]}>
-            <Text style={styles.macroValue}>{profile.macroGoals.fats}g</Text>
-            <Text style={styles.macroLabel}>Masti</Text>
-          </View>
+          {[
+            { label: 'Proteini', value: profile.macroGoals.protein, glow: colors.mint },
+            { label: 'Ugljeni hidrati', value: profile.macroGoals.carbs, glow: colors.mid },
+            { label: 'Masti', value: profile.macroGoals.fats, glow: colors.lav },
+          ].map((m, i) => (
+            <GradientTile key={m.label} gradient={gradientThirds[i]} glow={m.glow} contentStyle={styles.macroBox}>
+              <Text style={styles.macroValue}>{m.value}g</Text>
+              <Text style={styles.macroLabel}>{m.label}</Text>
+            </GradientTile>
+          ))}
         </View>
       </View>
 
@@ -217,7 +216,7 @@ const makeStyles = (t: Theme) =>
     goalValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 52, color: t.text, marginTop: 8, letterSpacing: -1 },
     goalSub: { fontFamily: 'Poppins_500Medium', fontSize: 12.5, color: t.ink(0.45), marginTop: 2 },
     macroRow: { flexDirection: 'row', gap: 8, marginTop: 20, alignSelf: 'stretch' },
-    macroBox: { flex: 1, paddingVertical: 12, borderRadius: 18, alignItems: 'center' },
+    macroBox: { paddingVertical: 12, paddingHorizontal: 6, alignItems: 'center' },
     macroValue: { fontFamily: 'Poppins_900Black_Italic', fontSize: 18, color: '#101012' },
     macroLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 10, color: '#101012', opacity: 0.68, marginTop: 3 },
     sectionTitle: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 16, color: t.text, marginTop: 26, marginBottom: 11 },
