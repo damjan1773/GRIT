@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, gradientColors, gradientLocations } from '../theme/colors';
+import { colors, gradientColors, gradientLocations, gradientThirds } from '../theme/colors';
 import { Theme } from '../theme/theme';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { Icon } from '../components/Icon';
@@ -132,9 +132,27 @@ export function DashboardScreen() {
       </View>
 
       <View style={styles.macroRow}>
-        <MacroCard label="Proteini" current={consumed.p} goal={profile.macroGoals.protein} bg={colors.mint} />
-        <MacroCard label="Ugljeni h." current={consumed.c} goal={profile.macroGoals.carbs} bg={colors.lav} />
-        <MacroCard label="Masti" current={consumed.f} goal={profile.macroGoals.fats} bg={colors.white} />
+        <MacroCard
+          label="Proteini"
+          current={consumed.p}
+          goal={profile.macroGoals.protein}
+          gradient={gradientThirds[0]}
+          glow={colors.mint}
+        />
+        <MacroCard
+          label="Ugljeni hidrati"
+          current={consumed.c}
+          goal={profile.macroGoals.carbs}
+          gradient={gradientThirds[1]}
+          glow={colors.mid}
+        />
+        <MacroCard
+          label="Masti"
+          current={consumed.f}
+          goal={profile.macroGoals.fats}
+          gradient={gradientThirds[2]}
+          glow={colors.lav}
+        />
       </View>
 
       <View style={styles.sectionHeader}>

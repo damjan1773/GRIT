@@ -15,7 +15,18 @@ export const gradientColors: [string, string, string] = [colors.mint, colors.mid
 export const gradientLocations: [number, number, number] = [0, 0.48, 1];
 export const gradientAngle = { start: { x: 0, y: 0.3 }, end: { x: 1, y: 0.7 } };
 
-export const softGradientColors: [string, string] = ['rgba(143,233,206,0.22)', 'rgba(197,190,245,0.20)'];
+/**
+ * The brand gradient cut into three, for a row of three tiles: side by side
+ * they read as one sweep from mint to lavender. The cut points are the
+ * gradient's colours a third and two thirds of the way along.
+ */
+export const gradientThirds: [[string, string], [string, string, string], [string, string]] = [
+  [colors.mint, '#ABE0E3'],
+  ['#ABE0E3', colors.mid, '#BCD1EF'],
+  ['#BCD1EF', colors.lav],
+];
+
+export const softGradientColors: [string, string] =['rgba(143,233,206,0.22)', 'rgba(197,190,245,0.20)'];
 
 /**
  * Chart marks: the brand mint and lavender stepped down in OKLCH (same hue) until
