@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors, gradientThirds } from '../theme/colors';
 import { Theme } from '../theme/theme';
-import { useThemedStyles } from '../theme/ThemeContext';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
+import { GradientButton } from '../components/GradientButton';
 import { DetailHeader } from '../components/DetailHeader';
 import { GradientTile } from '../components/GradientTile';
 import { Icon } from '../components/Icon';
@@ -25,8 +26,10 @@ interface MealDetailScreenProps {
 }
 
 export function MealDetailScreen({ meal, onBack }: MealDetailScreenProps) {
+  const { theme } = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const { profile, todayKey, deleteMeal } = useAppData();
+  const { profile, todayKey, deleteMeal, favoriteFor, addFavorite, removeFavorite } = useAppData();
+  const favorite = favoriteFor(meal);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   useEffect(() => {
@@ -124,6 +127,21 @@ export function MealDetailScreen({ meal, onBack }: MealDetailScreenProps) {
           })}
         </View>
       )}
+
+      {/* Keeps this meal for quick entry, so it can be logged again in one tap. */}
+      {favorite ? (
+        <View style={styles.favoriteDone}>
+          <View style={styles.favoriteDoneRow}>
+            <Icon name="star" size={18} color={theme.accent} />
+            <Text style={styles.favoriteDoneText}>U brzom unosu</Text>
+          </View>
+          <Pressable onPress={() => removeFavorite(favorite.id)} accessibilityRole="button" hitSlop={8}>
+            <Text style={styles.favoriteRemove}>Ukloni</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <GradientButton label="Dodaj u brzi unos" onPress={() => addFavorite(meal)} style={styles.favoriteBtn} />
+      )}
     </ScrollView>
   );
 }
@@ -172,4 +190,19 @@ const makeStyles = (t: Theme) =>
     itemMeta: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: t.ink(0.45), marginTop: 2 },
     itemKcal: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 15, color: t.text },
     itemKcalLabel: { fontFamily: 'Poppins_500Medium', fontSize: 9.5, letterSpacing: 1, color: t.ink(0.32) },
+    favoriteBtn: { marginTop: 26 },
+    favoriteDone: {
+      marginTop: 26,
+      height: 58,
+      paddingHorizontal: 20,
+      borderRadius: 29,
+      borderWidth: 1,
+      borderColor: t.ink(0.12),
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    favoriteDoneRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    favoriteDoneText: { fontFamily: 'Poppins_700Bold', fontSize: 14, color: t.text },
+    favoriteRemove: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: t.ink(0.55) },
   });

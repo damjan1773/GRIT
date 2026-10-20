@@ -12,6 +12,7 @@ import { MealParseItem, formatAmount, itemTotals, stepFor, sumTotals } from '../
 import { useAppData } from '../context/AppDataContext';
 import { createId } from '../services/storage';
 import { forDay } from '../utils/dates';
+import { QuickAddScreen } from './QuickAddScreen';
 
 type ChatMessage =
   | { id: string; kind: 'bot'; text: string }
@@ -68,6 +69,19 @@ export function MealEntryScreen() {
     await Clipboard.setStringAsync(text);
     setCopiedId(id);
   }
+
+  // The chat, or the list of kept meals opened from "Brzi unos". Switching keeps
+  // the chat's messages, since both live in this one screen.
+  const [view, setView] = useState<'chat' | 'quick'>('chat');
+
+  // Tapping the tab while already on it goes back to the chat, as native tab bars do.
+  useEffect(
+    () =>
+      navigation.addListener('tabPress', () => {
+        if (navigation.isFocused()) setView('chat');
+      }),
+    [navigation]
+  );
 
   const isToday = selectedDateKey === todayKey;
   const consumed = dayMeals.reduce((sum, m) => sum + m.calories, 0);
@@ -150,6 +164,19 @@ export function MealEntryScreen() {
     );
   }
 
+  if (view === 'quick') {
+    return (
+      <QuickAddScreen
+        onBack={() => setView('chat')}
+        // Straight to the dashboard, where the meal now shows in the list and the ring.
+        onAdded={() => {
+          setView('chat');
+          navigation.navigate('Dashboard');
+        }}
+      />
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       style={styles.screen}
@@ -162,16 +189,24 @@ export function MealEntryScreen() {
         </Pressable>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={styles.headerTitle} numberOfLines={1}>
-            Tvoj AI Nutricionista
+            AI Nutricionista
           </Text>
           {/* Off today, say so loudly — it's where the meal will be saved. */}
           {!isToday && (
             <Text style={[styles.headerSub, { color: theme.accent }]}>unos {forDay(selectedDateKey, todayKey)}</Text>
           )}
         </View>
-        <LinearGradient colors={gradientColors} locations={gradientLocations} style={styles.kcalBadge}>
-          <Text style={styles.kcalBadgeText}>{Math.round(consumed).toLocaleString('sr-RS')} kcal</Text>
-        </LinearGradient>
+        <Pressable
+          onPress={() => setView('quick')}
+          accessibilityRole="button"
+          accessibilityLabel="Brzi unos sačuvanih obroka"
+          style={({ pressed }) => [pressed && { opacity: 0.85 }]}
+        >
+          <LinearGradient colors={gradientColors} locations={gradientLocations} style={styles.quickBtn}>
+            <Icon name="star" size={14} color="#101012" />
+            <Text style={styles.quickBtnText}>Brzi unos</Text>
+          </LinearGradient>
+        </Pressable>
       </View>
 
       <ScrollView ref={scrollRef} style={styles.chatArea} contentContainerStyle={{ padding: 18, gap: 13 }}>
@@ -367,8 +402,8 @@ const makeStyles = (t: Theme) =>
     backBtn: { width: 38, height: 38, borderRadius: 13, borderWidth: 1, borderColor: t.ink(0.12), alignItems: 'center', justifyContent: 'center' },
     headerTitle: { fontFamily: 'Poppins_800ExtraBold_Italic', fontSize: 16, color: t.text },
     headerSub: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: t.ink(0.42), marginTop: 1 },
-    kcalBadge: { paddingHorizontal: 11, paddingVertical: 6, borderRadius: 99 },
-    kcalBadgeText: { fontFamily: 'Poppins_700Bold', fontSize: 10.5, color: '#101012' },
+    quickBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 99 },
+    quickBtnText: { fontFamily: 'Poppins_700Bold', fontSize: 11.5, color: '#101012' },
     chatArea: { flex: 1 },
     botBubble: {
       maxWidth: '82%',

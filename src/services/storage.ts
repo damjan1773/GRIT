@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Meal, UserProfile, WeightEntry, Workout, WorkoutSession } from '../types';
+import { FavoriteMeal, Meal, UserProfile, WeightEntry, Workout, WorkoutSession } from '../types';
 import { ThemeMode } from '../theme/theme';
 import { calculateMacroGoals } from '../utils/calculations';
 
@@ -11,6 +11,7 @@ const KEYS = {
   sessions: 'nutra:sessions',
   activeSession: 'nutra:activeSession',
   weights: 'nutra:weights',
+  favorites: 'nutra:favorites',
 };
 
 export async function loadThemeMode(): Promise<ThemeMode | null> {
@@ -138,11 +139,29 @@ export async function deleteWeight(dateKey: string): Promise<WeightEntry[]> {
   return storeWeights((await loadWeights()).filter(e => e.dateKey !== dateKey));
 }
 
+/** Meals kept for quick entry, newest first. */
+export async function loadFavorites(): Promise<FavoriteMeal[]> {
+  const raw = await AsyncStorage.getItem(KEYS.favorites);
+  return raw ? (JSON.parse(raw) as FavoriteMeal[]) : [];
+}
+
+export async function saveFavorite(favorite: FavoriteMeal): Promise<FavoriteMeal[]> {
+  const updated = [favorite, ...(await loadFavorites())];
+  await AsyncStorage.setItem(KEYS.favorites, JSON.stringify(updated));
+  return updated;
+}
+
+export async function deleteFavorite(id: string): Promise<FavoriteMeal[]> {
+  const updated = (await loadFavorites()).filter(f => f.id !== id);
+  await AsyncStorage.setItem(KEYS.favorites, JSON.stringify(updated));
+  return updated;
+}
+
 export async function loadMealsForDate(dateKey: string): Promise<Meal[]> {
   const meals = await loadMeals();
   return meals.filter(m => m.dateKey === dateKey);
 }
 
 export async function clearAll(): Promise<void> {
-  await AsyncStorage.multiRemove([KEYS.profile, KEYS.meals, KEYS.workouts, KEYS.sessions, KEYS.activeSession, KEYS.weights]);
+  await AsyncStorage.multiRemove([KEYS.profile, KEYS.meals, KEYS.workouts, KEYS.sessions, KEYS.activeSession, KEYS.weights, KEYS.favorites]);
 }

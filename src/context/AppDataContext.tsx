@@ -1,11 +1,14 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
-import { Meal, UserProfile, WeightEntry, Workout, WorkoutSession } from '../types';
+import { FavoriteMeal, Meal, UserProfile, WeightEntry, Workout, WorkoutSession } from '../types';
 import {
   addMeal as addMealToStorage,
   appendSession,
   createId,
+  deleteFavorite,
   deleteMeal as deleteMealFromStorage,
+  loadFavorites,
+  saveFavorite,
   deleteWeight as deleteWeightFromStorage,
   deleteWorkout as deleteWorkoutFromStorage,
   loadActiveSession,
@@ -59,6 +62,14 @@ interface AppDataContextValue {
   /** Logs today's weight, replacing an earlier weigh-in from today. */
   logWeight: (kg: number) => Promise<void>;
   deleteWeight: (dateKey: string) => Promise<void>;
+  /** Meals kept for quick entry, newest first. */
+  favorites: FavoriteMeal[];
+  /** The quick-entry copy of a logged meal, if it has been kept. */
+  favoriteFor: (meal: Meal) => FavoriteMeal | undefined;
+  addFavorite: (meal: Meal) => Promise<void>;
+  removeFavorite: (id: string) => Promise<void>;
+  /** Logs a kept meal to the selected day, as if it had just been entered. */
+  logFavorite: (favorite: FavoriteMeal) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
@@ -70,6 +81,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [activeSession, setActiveSession] = useState<WorkoutSession | null>(null);
   const [weights, setWeights] = useState<WeightEntry[]>([]);
+  const [favorites, setFavorites] = useState<FavoriteMeal[]>([]);
   const [loading, setLoading] = useState(true);
   const [todayKey, setTodayKey] = useState(() => toDateKey(new Date()));
   const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
@@ -78,15 +90,17 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      const [p, m, w, s, active, kg] = await Promise.all([
+      const [p, m, w, s, active, kg, fav] = await Promise.all([
         loadProfile(),
         loadMeals(),
         loadWorkouts(),
         loadSessions(),
         loadActiveSession(),
         loadWeights(),
+        loadFavorites(),
       ]);
       setWeights(kg);
+      setFavorites(fav);
       setProfileState(p);
       setMeals(m);
       setWorkouts(w);
@@ -211,6 +225,60 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     setWeights(await deleteWeightFromStorage(dateKey));
   }, []);
 
+  // A logged meal counts as kept when a favourite has the same name and totals —
+  // copies logged from the quick list match their source this way too.
+  const favoriteFor = useCallback(
+    (meal: Meal) =>
+      favorites.find(
+        f =>
+          f.name === meal.name &&
+          f.calories === meal.calories &&
+          f.protein === meal.protein &&
+          f.carbs === meal.carbs &&
+          f.fats === meal.fats
+      ),
+    [favorites]
+  );
+
+  const addFavorite = useCallback(
+    async (meal: Meal) => {
+      if (favoriteFor(meal)) return;
+      const favorite: FavoriteMeal = {
+        id: createId(),
+        name: meal.name,
+        calories: meal.calories,
+        protein: meal.protein,
+        carbs: meal.carbs,
+        fats: meal.fats,
+        items: meal.items,
+        createdAt: Date.now(),
+      };
+      setFavorites(await saveFavorite(favorite));
+    },
+    [favoriteFor]
+  );
+
+  const removeFavorite = useCallback(async (id: string) => {
+    setFavorites(await deleteFavorite(id));
+  }, []);
+
+  const logFavorite = useCallback(
+    async (favorite: FavoriteMeal) => {
+      await addMeal({
+        id: createId(),
+        name: favorite.name,
+        calories: favorite.calories,
+        protein: favorite.protein,
+        carbs: favorite.carbs,
+        fats: favorite.fats,
+        items: favorite.items,
+        timestamp: Date.now(),
+        dateKey: selectedDateKey,
+      });
+    },
+    [addMeal, selectedDateKey]
+  );
+
   const dayMeals = useMemo(() => meals.filter(m => m.dateKey === selectedDateKey), [meals, selectedDateKey]);
 
   const value = useMemo(
@@ -237,6 +305,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       weights,
       logWeight,
       deleteWeight,
+      favorites,
+      favoriteFor,
+      addFavorite,
+      removeFavorite,
+      logFavorite,
     }),
     [
       profile,
@@ -260,6 +333,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       weights,
       logWeight,
       deleteWeight,
+      favorites,
+      favoriteFor,
+      addFavorite,
+      removeFavorite,
+      logFavorite,
     ]
   );
 

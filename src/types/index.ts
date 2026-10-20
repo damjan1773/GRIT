@@ -98,6 +98,17 @@ export interface WeightEntry {
   kg: number;
 }
 
+/**
+ * A meal kept for quick entry: what it was made of, without a day or time.
+ * Adding it logs a fresh copy as a Meal.
+ */
+export interface FavoriteMeal extends MealMacros {
+  id: string;
+  name: string;
+  items?: MealParseItem[];
+  createdAt: number;
+}
+
 export interface Meal extends MealMacros {
   id: string;
   name: string;
