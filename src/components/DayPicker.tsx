@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { LayoutChangeEvent, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import type { ScrollViewInstance } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, gradientColors, gradientLocations } from '../theme/colors';
 import { Theme } from '../theme/theme';
@@ -21,7 +22,7 @@ interface DayPickerProps {
 /** Horizontal strip of today and a week either side. */
 export function DayPicker({ todayKey, selectedDateKey, onSelect }: DayPickerProps) {
   const styles = useThemedStyles(makeStyles);
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const viewportWidth = useRef(0);
   const contentWidth = useRef(0);
   const centred = useRef(false);

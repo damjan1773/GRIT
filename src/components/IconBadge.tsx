@@ -1,7 +1,8 @@
 import React from 'react';
 import { View } from 'react-native';
+import type { ViewProps } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import MaskedView from '@react-native-masked-view/masked-view';
+import MaskedViewClass from '@react-native-masked-view/masked-view';
 import { SymbolView } from 'expo-symbols';
 import type { SFSymbol } from 'sf-symbols-typescript';
 import { chartColors, gradientColors, gradientLocations } from '../theme/colors';
@@ -15,6 +16,14 @@ import { Icon } from './Icon';
  * the calorie ring and the tab bar; 'hue' gives each category its own colour.
  */
 const ICON_FILL: 'gradient' | 'hue' = 'gradient';
+
+/**
+ * The package still types MaskedView as an old class component, which React
+ * 19.3's JSX types no longer accept. It renders fine; this only restates its props.
+ */
+const MaskedView = MaskedViewClass as unknown as React.ComponentType<
+  ViewProps & { maskElement: React.ReactElement; children?: React.ReactNode }
+>;
 
 interface IconBadgeProps {
   /** SF Symbol name, drawn on iOS — the same glyphs Apple's own apps use. */

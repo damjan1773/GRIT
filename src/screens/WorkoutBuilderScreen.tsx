@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import type { ScrollViewInstance } from 'react-native';
 import { Theme } from '../theme/theme';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { Icon } from '../components/Icon';
@@ -36,7 +37,7 @@ interface WorkoutBuilderScreenProps {
 export function WorkoutBuilderScreen({ base, onCancel, onSave }: WorkoutBuilderScreenProps) {
   const { theme } = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const editing = !!base && !base.builtIn;
 
   const [name, setName] = useState(base?.name ?? '');

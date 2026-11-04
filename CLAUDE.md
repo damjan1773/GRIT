@@ -48,4 +48,5 @@ prototype. The UI is in Serbian.
 - Free Gemini tier: 5 requests/minute and 20/day — easy to exhaust while testing.
   `EXPO_PUBLIC_MEAL_PARSER_PROVIDER=mock` works offline and without limits.
 - The Expo Go build on the App Store tracks one SDK; the project SDK must match it
-  (currently 57) or the app refuses to open.
+  (currently 58) or the app refuses to open. Upgrade with
+  `npx expo install expo@^<sdk>.0.0 --fix`, then `npx expo-doctor@latest` and `tsc`.

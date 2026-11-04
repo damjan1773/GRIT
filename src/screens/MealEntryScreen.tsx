@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import type { ScrollViewInstance } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Clipboard from 'expo-clipboard';
@@ -38,7 +39,7 @@ export function MealEntryScreen() {
   const { profile, todayKey, selectedDateKey, dayMeals, addMeal } = useAppData();
   const { theme } = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([
     { id: nextId(), kind: 'bot', text: 'Zdravo. Napiši svojim rečima šta si jeo i izračunaću kalorije i makronutrijente. Što detaljnije napišeš šta si pojeo/la to ću preciznije izračunati.' },
