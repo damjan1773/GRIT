@@ -64,7 +64,9 @@
     <script>
       // Opened from the iOS home screen with a translucent status bar, the page is
       // told it is one status bar shorter than the screen, which left a black strip
-      // under the tab bar. When that happens, the root takes the real screen height.
+      // under the tab bar. When that happens, the document and the root take the
+      // real screen height: iOS paints only as far down as the document reaches,
+      // so stretching the root alone left the tab bar cut off at the old edge.
       // Elsewhere — a Safari tab, other phones, a WebKit that reports it right —
       // the heights match and nothing changes.
       (function () {
@@ -74,13 +76,12 @@
           var standalone =
             window.navigator.standalone === true ||
             (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
-          if (standalone && window.innerHeight < window.screen.height) {
-            root.style.bottom = 'auto';
-            root.style.height = window.screen.height + 'px';
-          } else {
-            root.style.bottom = '';
-            root.style.height = '';
-          }
+          var short = standalone && window.innerHeight < window.screen.height;
+          var height = short ? window.screen.height + 'px' : '';
+          document.documentElement.style.height = height;
+          document.body.style.height = height;
+          root.style.height = height;
+          root.style.bottom = short ? 'auto' : '';
         }
         fit();
         window.addEventListener('resize', fit);
