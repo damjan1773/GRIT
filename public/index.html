@@ -61,5 +61,31 @@
     <noscript>Za GRIT je potreban JavaScript.</noscript>
     <!-- The root element for your Expo app. -->
     <div id="root"></div>
+    <script>
+      // Opened from the iOS home screen with a translucent status bar, the page is
+      // told it is one status bar shorter than the screen, which left a black strip
+      // under the tab bar. When that happens, the root takes the real screen height.
+      // Elsewhere — a Safari tab, other phones, a WebKit that reports it right —
+      // the heights match and nothing changes.
+      (function () {
+        function fit() {
+          var root = document.getElementById('root');
+          if (!root) return;
+          var standalone =
+            window.navigator.standalone === true ||
+            (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+          if (standalone && window.innerHeight < window.screen.height) {
+            root.style.bottom = 'auto';
+            root.style.height = window.screen.height + 'px';
+          } else {
+            root.style.bottom = '';
+            root.style.height = '';
+          }
+        }
+        fit();
+        window.addEventListener('resize', fit);
+        window.addEventListener('orientationchange', fit);
+      })();
+    </script>
   </body>
 </html>
