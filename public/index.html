@@ -40,11 +40,19 @@
         -webkit-touch-callout: none;
         overscroll-behavior: none;
       }
-      /* These styles make the root element full-height */
+      /*
+        The root is pinned to all four screen edges rather than sized by height.
+        Opened from the iOS home screen, 100% / 100vh can resolve to less than the
+        screen, which left a strip under the tab bar; a fixed box with inset 0
+        spans the whole layout viewport under viewport-fit=cover.
+      */
       #root {
         display: flex;
-        height: 100%;
-        flex: 1;
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
       }
     </style>
   </head>
