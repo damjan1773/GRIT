@@ -47,6 +47,12 @@ prototype. The UI is in Serbian.
   `EXPO_PUBLIC_` variables are inlined into the bundle, so the key ships in the app.
 - Free Gemini tier: 5 requests/minute and 20/day — easy to exhaust while testing.
   `EXPO_PUBLIC_MEAL_PARSER_PROVIDER=mock` works offline and without limits.
+- Web build on Vercel: `vercel.json` runs `npx expo export -p web` into `dist/`.
+  Meals go through `api/parse-meal.ts`, which holds `GEMINI_API_KEY` server-side;
+  the page only gets `EXPO_PUBLIC_MEAL_PARSER_PROXY_URL=/api/parse-meal`. Never set
+  `EXPO_PUBLIC_MEAL_PARSER_API_KEY` there. The request body is shared through
+  `services/geminiRequest.ts`. Home-screen setup lives in `public/` (index.html,
+  manifest, icons).
 - The Expo Go build on the App Store tracks one SDK; the project SDK must match it
   (currently 58) or the app refuses to open. Upgrade with
   `npx expo install expo@^<sdk>.0.0 --fix`, then `npx expo-doctor@latest` and `tsc`.

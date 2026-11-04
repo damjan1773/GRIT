@@ -1,5 +1,6 @@
 import React from 'react';
-import { View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import type { ViewProps } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedViewClass from '@react-native-masked-view/masked-view';
@@ -71,10 +72,34 @@ export function IconBadge({ symbol, icon, hue, size = 34, iconSize = 28 }: IconB
   }
 
   const { colors, locations } = iconGradient(theme);
+
+  // The web build can't mask a view, but a browser can paint text with a gradient,
+  // and the Material glyph is a character in a font — so it is drawn as text.
+  if (Platform.OS === 'web') {
+    const stops = colors.map((c, i) => `${c} ${Math.round((locations?.[i] ?? i / (colors.length - 1)) * 100)}%`);
+    const code = MaterialIcons.getRawGlyphMap()[icon.replace(/_/g, '-') as keyof ReturnType<typeof MaterialIcons.getRawGlyphMap>];
+    return (
+      <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+        <Text
+          style={[
+            { fontFamily: MaterialIcons.getFontFamily(), fontSize: iconSize, lineHeight: iconSize },
+            {
+              backgroundImage: `linear-gradient(135deg, ${stops.join(', ')})`,
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              color: 'transparent',
+            } as object,
+          ]}
+        >
+          {typeof code === 'number' ? String.fromCodePoint(code) : (code ?? '')}
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      {/* The glyph is the stencil and the gradient shows through it. The web build
-          can't mask and draws the stencil itself, so it gets the theme accent. */}
+      {/* The glyph is the stencil and the gradient shows through it. */}
       <MaskedView
         style={{ width: iconSize, height: iconSize }}
         maskElement={

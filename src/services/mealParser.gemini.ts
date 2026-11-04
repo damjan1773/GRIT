@@ -1,55 +1,12 @@
-import { MEAL_PARSER_API_KEY, MEAL_PARSER_MODEL } from '../config/aiConfig';
+import { MEAL_PARSER_API_KEY, MEAL_PARSER_MODEL, MEAL_PARSER_PROXY_URL } from '../config/aiConfig';
+import { GEMINI_ENDPOINT, geminiRequestBody } from './geminiRequest';
 import { MealParserError } from './mealParserError';
 import { MealParseItem, MealParseResult, MealUnit, stepFor, sumTotals } from './mealParser.types';
-
-const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/interactions';
 /** A call takes a few seconds; a phone on a slow connection needs room beyond that. */
 const TIMEOUT_MS = 40_000;
 /** The model reports "high demand" often enough to be worth one quiet retry. */
 const RETRY_STATUSES = new Set([500, 502, 503, 504]);
 const RETRY_DELAY_MS = 1500;
-
-/** Amounts in grams with macros per 100 g, so the card can edit in 10 g steps. */
-const RESPONSE_SCHEMA = {
-  type: 'object',
-  properties: {
-    items: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          name: { type: 'string' },
-          unit: { type: 'string', enum: ['g', 'ml', 'kom'] },
-          amount: { type: 'number' },
-          perCalories: { type: 'number' },
-          perProtein: { type: 'number' },
-          perCarbs: { type: 'number' },
-          perFats: { type: 'number' },
-        },
-        required: ['name', 'unit', 'amount', 'perCalories', 'perProtein', 'perCarbs', 'perFats'],
-      },
-    },
-  },
-  required: ['items'],
-};
-
-function buildPrompt(text: string): string {
-  return [
-    'Ti si nutricionista. Razloži opis obroka na pojedinačne namirnice i proceni makronutrijente.',
-    'Za svaku namirnicu vrati:',
-    '- name: naziv namirnice na srpskom (latinica), malim slovima',
-    '- unit: "g" za namirnice koje se mere u gramima, "ml" za tečnosti, "kom" samo za komadne (jaje, kriška hleba, banana)',
-    '- amount: ukupna količina koju je osoba pojela — broj grama, mililitara ili komada (ceo broj)',
-    '- perCalories, perProtein, perCarbs, perFats: vrednosti na 100 g ili 100 ml, a za "kom" po JEDNOM komadu',
-    'Primer: "300g kobasice" → unit "g", amount 300, perCalories oko 320 (na 100 g).',
-    'Primer: "2 jajeta" → unit "kom", amount 2, perCalories oko 78 (po jajetu).',
-    'Proteini, ugljeni hidrati i masti su u gramima. Koristi realne prosečne vrednosti.',
-    'Ako količina nije navedena, pretpostavi jednu uobičajenu porciju.',
-    'Ako u tekstu nema hrane, vrati praznu listu.',
-    '',
-    `Obrok: ${text}`,
-  ].join('\n');
-}
 
 /** REST returns no output_text shortcut — the text sits in the model_output step. */
 function extractText(payload: any): string {
@@ -119,7 +76,12 @@ function toItems(parsed: any): MealParseItem[] {
 /** Turns an HTTP status into something the user can act on. */
 function errorForStatus(status: number, body: string): MealParserError {
   if (status === 401 || status === 403) {
-    return new MealParserError('Gemini nije prihvatio ključ. Proveri EXPO_PUBLIC_MEAL_PARSER_API_KEY u .env.', body);
+    return new MealParserError(
+      MEAL_PARSER_PROXY_URL
+        ? 'Server nema ispravan Gemini ključ. Proveri GEMINI_API_KEY u podešavanjima na Vercel-u.'
+        : 'Gemini nije prihvatio ključ. Proveri EXPO_PUBLIC_MEAL_PARSER_API_KEY u .env.',
+      body
+    );
   }
   if (status === 404) {
     return new MealParserError(`Model ${MEAL_PARSER_MODEL} nije dostupan tvom nalogu.`, body);
@@ -137,17 +99,21 @@ async function callOnce(text: string): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    return await fetch(ENDPOINT, {
+    // Through the server function when one is set (the web build): the key stays
+    // on the server and the page only sends the text. It answers with Gemini's
+    // own status and body, so everything below reads the same either way.
+    if (MEAL_PARSER_PROXY_URL) {
+      return await fetch(MEAL_PARSER_PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+        signal: controller.signal,
+      });
+    }
+    return await fetch(GEMINI_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': MEAL_PARSER_API_KEY },
-      body: JSON.stringify({
-        model: MEAL_PARSER_MODEL,
-        input: buildPrompt(text),
-        response_format: { type: 'text', mime_type: 'application/json', schema: RESPONSE_SCHEMA },
-        // Pulling a few foods out of a sentence needs no deliberation, and the
-        // deliberating is what made the call slow.
-        generation_config: { thinking_level: 'low' },
-      }),
+      body: JSON.stringify(geminiRequestBody(text, MEAL_PARSER_MODEL)),
       signal: controller.signal,
     });
   } catch (error: any) {
@@ -161,7 +127,7 @@ async function callOnce(text: string): Promise<Response> {
 }
 
 export async function parseMealGemini(text: string): Promise<MealParseResult> {
-  if (!MEAL_PARSER_API_KEY) {
+  if (!MEAL_PARSER_PROXY_URL && !MEAL_PARSER_API_KEY) {
     throw new MealParserError('Nedostaje Gemini ključ u .env (EXPO_PUBLIC_MEAL_PARSER_API_KEY).');
   }
 
